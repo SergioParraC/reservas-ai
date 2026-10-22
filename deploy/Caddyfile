@@ -1,0 +1,23 @@
+{
+	email {$CORREO_TLS}
+}
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	# API .NET (rutas /api/* y sonda /health)
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+
+	handle /health {
+		reverse_proxy api:8080
+	}
+
+	# SPA Angular compilada (dist/frontend montado en /srv)
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
