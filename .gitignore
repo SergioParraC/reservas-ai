@@ -1,0 +1,48 @@
+# =============================================================================
+# .gitignore — rama: master (documentación y especificaciones)
+# -----------------------------------------------------------------------------
+# Alcance acotado a los archivos realmente versionados en esta rama:
+#   README.md, docs/PLAN_INGENIERIA.md, openspec/**, .claude/, .gemini/,
+#   .dsh/, .github/, .prompts/
+# No se incluyen patrones de compilación (.NET / Angular) porque esta rama
+# aún no contiene código fuente (sin .cs, .csproj, package.json, node_modules).
+# =============================================================================
+
+# --- Ruido del sistema operativo (Windows / macOS / Linux) ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+desktop.ini
+.DS_Store
+.AppleDouble
+._*
+
+# --- Ruido de editores al abrir los .md ---
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# --- Temporales y ficheros de bloqueo de ofimática sobre los .md ---
+# Word / LibreOffice / Notepad++ generan estos ficheros junto al documento
+~$*
+.~lock.*#
+*.tmp
+*.bak
+*.orig
+
+# --- Estado local de las herramientas de IA ya versionadas ---
+# Se conservan los comandos y skills (.md / .toml); solo se excluye lo local
+.claude/settings.local.json
+.claude/*.local.json
+.claude/logs/
+.claude/cache/
+.gemini/settings.json
+.gemini/logs/
+.dsh/logs/
+.dsh/cache/
+
+# --- Logs y caché de OpenSpec (metadatos, no especificaciones) ---
+openspec/.cache/
+openspec/**/*.log
