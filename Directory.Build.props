@@ -1,0 +1,15 @@
+<Project>
+
+  <!--
+    Reglas de compilación comunes a todos los proyectos .NET de la solución.
+    Se aplican a src/ y tests/ porque este archivo vive en la raíz del repositorio.
+  -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+</Project>

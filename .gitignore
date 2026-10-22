@@ -1,11 +1,21 @@
 # =============================================================================
-# .gitignore — rama: master (documentación y especificaciones)
+# .gitignore — rama: master
 # -----------------------------------------------------------------------------
-# Alcance acotado a los archivos realmente versionados en esta rama:
-#   README.md, docs/PLAN_INGENIERIA.md, openspec/**, .claude/, .gemini/,
-#   .dsh/, .github/, .prompts/
-# No se incluyen patrones de compilación (.NET / Angular) porque esta rama
-# aún no contiene código fuente (sin .cs, .csproj, package.json, node_modules).
+# Contenido versionado:
+#   · Backend .NET 10 (Clean Architecture): src/Backend.sln y los proyectos
+#     Backend.Domain, Backend.Application, Backend.Infrastructure y
+#     Backend.Presentation.Api, incluidos appsettings*.json,
+#     Properties/launchSettings.json y las migraciones de EF Core.
+#   · SPA Angular 20: src/frontend/** salvo node_modules/, dist/, .angular/ y
+#     coverage/. Se versionan package.json, package-lock.json y tsconfig*.json.
+#   · Pruebas: tests/Backend.ArchitectureTests, tests/Backend.UnitTests y
+#     tests/Backend.IntegrationTests.
+#   · Calidad y despliegue: Directory.Build.props, Dockerfile, docker-compose.yml,
+#     .dockerignore y .github/workflows/.
+#   · Documentación y especificaciones: README.md, docs/**, openspec/**.
+#   · Configuración de herramientas de IA: .claude/, .cline/, .clinerules/,
+#     .dsh/, .gemini/, .github/ (agents, prompts y skills), .prompts/ y
+#     .vscode/settings.json.
 # =============================================================================
 
 # --- Ruido del sistema operativo (Windows / macOS / Linux) ---
@@ -17,12 +27,65 @@ desktop.ini
 .AppleDouble
 ._*
 
-# --- Ruido de editores al abrir los .md ---
+# --- Ruido de editores ---
+# De VS Code solo se versiona la configuración del proyecto (TypeScript del
+# workspace para Angular 20); el resto de .vscode/ es estado local de la máquina.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
 *.swp
 *.swo
 *~
-.idea/
-.vscode/
+
+# --- Artefactos de compilación .NET (src/ y tests/) ---
+# Sí se versionan: Directory.Build.props, los .csproj, los appsettings*.json y
+# las migraciones de EF Core (src/Backend.Infrastructure/Persistence/Migrations).
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+.vs/
+.dotnet/
+*.user
+*.suo
+*.userosscache
+*.userprefs
+*.sln.docstates
+*.nupkg
+*.snupkg
+project.assets.json
+project.nuget.cache
+*.nuget.props
+*.nuget.targets
+*.binlog
+*.tlog
+*.psess
+*.vsp
+*.vspx
+msbuild.log
+
+# --- Cobertura y resultados de pruebas (dotnet test / coverlet) ---
+TestResults/
+*.trx
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+
+# --- Artefactos del cliente Angular (src/frontend) ---
+# Se versionan angular.json, package.json, package-lock.json, karma.conf.js,
+# proxy.conf.json, tsconfig*.json y src/**; solo se excluye lo generado.
+node_modules/
+src/frontend/dist/
+src/frontend/.angular/
+src/frontend/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # --- Temporales y ficheros de bloqueo de ofimática sobre los .md ---
 # Word / LibreOffice / Notepad++ generan estos ficheros junto al documento
@@ -32,17 +95,38 @@ desktop.ini
 *.bak
 *.orig
 
+# --- Secretos y configuración local de contenedores ---
+# docker-compose.yml inyecta credenciales por variables de entorno
+# (MSSQL_SA_PASSWORD, JWT_KEY, ENTRA_*); los valores reales viven en .env.
+.env
+.env.*
+!.env.example
+
+# --- Logs de corridas locales (build, pruebas, Docker Compose) ---
+# Volcados como one.log, integ*.log, compose-build.log o compose-up.log en la
+# raíz del repositorio; no forman parte del código fuente.
+*.log
+logs/
+
 # --- Estado local de las herramientas de IA ya versionadas ---
 # Se conservan los comandos y skills (.md / .toml); solo se excluye lo local
 .claude/settings.local.json
 .claude/*.local.json
 .claude/logs/
 .claude/cache/
+.cline/settings.local.json
+.cline/*.local.json
+.cline/logs/
+.cline/cache/
+.clinerules/**/*.local.md
 .gemini/settings.json
+.gemini/settings.local.json
 .gemini/logs/
+.gemini/cache/
+.dsh/settings.local.json
 .dsh/logs/
 .dsh/cache/
 
-# --- Logs y caché de OpenSpec (metadatos, no especificaciones) ---
+# --- Caché de OpenSpec (metadatos, no especificaciones) ---
+# Los *.log de openspec/ ya quedan cubiertos por la regla global de arriba.
 openspec/.cache/
-openspec/**/*.log

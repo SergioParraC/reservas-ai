@@ -1,0 +1,51 @@
+name: reservas-espacios
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: reservas-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Reservas.Segura.2026!}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-datos:/var/opt/mssql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reservas-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=mssql,1433;Database=ReservasEspaciosDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Reservas.Segura.2026!};Encrypt=True;TrustServerCertificate=True;"
+      Jwt__Issuer: "https://api.reservas-espacios.edu"
+      Jwt__Audience: "reservas-espacios-spa"
+      Jwt__ExpiraMinutos: "60"
+      Jwt__Key: "${JWT_KEY:-clave-de-desarrollo-de-al-menos-32-caracteres-para-hmac}"
+      EntraId__TenantId: "${ENTRA_TENANT_ID:-}"
+      EntraId__ClientId: "${ENTRA_CLIENT_ID:-}"
+      EntraId__Audience: "${ENTRA_AUDIENCE:-}"
+      Seed__AdminEmail: "${SEED_ADMIN_EMAIL:-admin@universidad.edu}"
+      Seed__AdminPassword: "${SEED_ADMIN_PASSWORD:-Clave.Segura.2026}"
+      Seed__AdminNombre: "Administrador del Sistema"
+      Cors__OrigenesPermitidos__0: "http://localhost:4200"
+    ports:
+      - "8080:8080"
+    depends_on:
+      mssql:
+        condition: service_healthy
+
+volumes:
+  mssql-datos:

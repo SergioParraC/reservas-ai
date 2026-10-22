@@ -143,6 +143,7 @@ El backend está concebido como un **Monolito Modular** estructurado en **Clean 
 
 ```text
 ├── src/
+│   ├── Backend.sln                    # Solución .NET 10 con las cuatro capas y las pruebas de arquitectura
 │   ├── Backend.Domain/                # Entidades, Value Objects, Excepciones y Motor de Disponibilidad
 │   ├── Backend.Application/           # Casos de uso, DTOs, Mapeos, Interfaces y Validaciones
 │   ├── Backend.Infrastructure/        # EF Core DbContext, Migraciones, Identity, Correo y BackgroundJobs
@@ -155,9 +156,11 @@ El backend está concebido como un **Monolito Modular** estructurado en **Clean 
 │       └── features/                  # Módulos: auth, areas, reservas, aprobaciones, asistencia
 │
 ├── tests/
+│   ├── Backend.ArchitectureTests/     # NetArchTest: regla de dependencias y pureza del dominio
 │   ├── Backend.UnitTests/             # Pruebas unitarias de dominio y casos de uso
 │   └── Backend.IntegrationTests/      # Pruebas de integración con Testcontainers (SQL Server)
 │
+├── Directory.Build.props               # Nullable, ImplicitUsings y TreatWarningsAsErrors comunes
 ├── docker-compose.yml                 # Orquestación de servicios (API, SPA, SQL Server, Nginx)
 └── PLAN_INGENIERIA.md                 # Documento de Planificación e Ingeniería Integral
 ```
@@ -190,6 +193,38 @@ El proyecto adopta **Spec-Driven Development (SDD)** con el soporte de **OpenSpe
 - [.NET 10 SDK](https://dotnet.microsoft.com/)
 - [Node.js 22+](https://nodejs.org/) y npm
 - [Docker Desktop](https://www.docker.com/)
+
+### Compilación y Pruebas del Backend
+
+```bash
+# Restaurar los paquetes NuGet de la solución
+dotnet restore src/Backend.sln
+
+# Compilar la solución completa (cualquier advertencia rompe la compilación)
+dotnet build src/Backend.sln
+
+# Ejecutar todas las pruebas de la solución (arquitectura + unitarias)
+dotnet test src/Backend.sln
+```
+
+`Directory.Build.props` habilita `Nullable`, `ImplicitUsings` y `TreatWarningsAsErrors=true` en todos los proyectos, por lo que una advertencia del compilador se reporta como error.
+
+La persistencia de identidad (EF Core 10 + SQL Server 2022), los comandos de migración y la
+política de seed están documentados en [`docs/persistencia.md`](docs/persistencia.md).
+La autenticación híbrida (JWT local + Entra ID), las variables de configuración y el catálogo de
+errores RFC 7807 están en [`docs/autenticacion.md`](docs/autenticacion.md).
+
+### Verificación de la Regla de Dependencias
+
+```bash
+dotnet list src/Backend.Domain reference
+dotnet list src/Backend.Application reference
+dotnet list src/Backend.Infrastructure reference
+dotnet list src/Backend.Presentation.Api reference
+dotnet list src/Backend.Domain package
+```
+
+Resultado esperado: `Backend.Domain` sin referencias de proyecto ni paquetes, `Backend.Application` → `Backend.Domain`, `Backend.Infrastructure` → `Backend.Application` y `Backend.Domain`, y `Backend.Presentation.Api` → `Backend.Application` y `Backend.Infrastructure`.
 
 ### Ejecución Rápida con Docker Compose
 

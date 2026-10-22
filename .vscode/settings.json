@@ -1,0 +1,13 @@
+{
+  // El proyecto Angular fija TypeScript 5.9.x (Angular 20 solo admite >=5.8 <6.0).
+  // Se le indica al editor que use el TypeScript del workspace y no el que trae VS Code.
+  "typescript.tsdk": "src/frontend/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.angular/**": true,
+    "**/dist/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true
+  }
+}

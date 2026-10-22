@@ -1,0 +1,89 @@
+using Backend.Application.Interfaces;
+using Backend.Infrastructure.Common;
+using Backend.Infrastructure.Identity;
+using Backend.Infrastructure.Persistence;
+using Backend.Infrastructure.Persistence.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Backend.Infrastructure;
+
+/// <summary>
+/// Registro de los servicios de infraestructura: contexto de EF Core,
+/// almacenes de Identity, emisión de tokens y sembrador de datos base.
+/// </summary>
+public static class DependencyInjection
+{
+    /// <summary>Nombre de la clave de configuración de la cadena de conexión.</summary>
+    public const string NombreCadenaConexion = "DefaultConnection";
+
+    /// <summary>Intentos fallidos consecutivos antes de bloquear la cuenta (valor por defecto).</summary>
+    public const int MaxIntentosFallidosPorDefecto = 5;
+
+    /// <summary>Minutos de bloqueo temporal por defecto.</summary>
+    public const int MinutosBloqueoPorDefecto = 15;
+
+    /// <summary>Longitud mínima exigida a las contraseñas locales.</summary>
+    public const int LongitudMinimaContrasena = 10;
+
+    /// <summary>
+    /// Registra la persistencia de identidad sobre SQL Server y la emisión de tokens locales.
+    /// Falla explícitamente al arrancar si la cadena de conexión no está configurada.
+    /// </summary>
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var cadenaConexion = configuration.GetConnectionString(NombreCadenaConexion);
+
+        if (string.IsNullOrWhiteSpace(cadenaConexion))
+        {
+            throw new InvalidOperationException(
+                $"No se encontró la cadena de conexión '{NombreCadenaConexion}'. " +
+                "Configúrela en ConnectionStrings:DefaultConnection (appsettings.Development.json, variables de entorno o User Secrets).");
+        }
+
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(cadenaConexion, sql =>
+                sql.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorNumbersToAdd: null)));
+
+        services.AddScoped<IApplicationDbContext>(proveedor => proveedor.GetRequiredService<ApplicationDbContext>());
+
+        services.AddIdentityCore<Usuario>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+
+                options.Password.RequiredLength = LongitudMinimaContrasena;
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = configuration.GetValue(
+                    "Identity:Lockout:MaxIntentosFallidos",
+                    MaxIntentosFallidosPorDefecto);
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(configuration.GetValue(
+                    "Identity:Lockout:MinutosBloqueo",
+                    MinutosBloqueoPorDefecto));
+            })
+            .AddRoles<Rol>()
+            .AddEntityFrameworkStores<ApplicationDbContext>();
+
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.Seccion));
+        services.Configure<EntraIdOptions>(configuration.GetSection(EntraIdOptions.Seccion));
+
+        services.AddSingleton<IRelojSistema, RelojSistema>();
+        services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IEntraIdProfileResolver, EntraIdProfileResolver>();
+        services.AddScoped<IInicializadorIdentity, InicializadorIdentity>();
+
+        return services;
+    }
+}
