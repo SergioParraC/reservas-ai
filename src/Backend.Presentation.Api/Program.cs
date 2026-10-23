@@ -2,6 +2,7 @@ using Backend.Application.Autenticacion;
 using Backend.Application.Common;
 using Backend.Application.Interfaces;
 using Backend.Application.Modules.Areas;
+using Backend.Application.Modules.Reservas;
 using Backend.Application.Modules.Usuarios;
 using Backend.Infrastructure;
 using Backend.Infrastructure.Persistence;
@@ -41,6 +42,11 @@ builder.Services.AddScoped<GenerarQrPuestoHandler>();
 builder.Services.AddScoped<GenerarPlantillaQrHandler>();
 builder.Services.AddScoped<ConsultarCatalogoHandler>();
 builder.Services.AddScoped<ObtenerEspacioPublicoHandler>();
+
+builder.Services.AddScoped<ConsultarDisponibilidadHandler>();
+builder.Services.AddScoped<CrearReservaHandler>();
+builder.Services.AddScoped<ConsultarMisReservasHandler>();
+builder.Services.AddScoped<CancelarReservaHandler>();
 
 builder.Services.AddScoped<RegistrarUsuarioHandler>();
 builder.Services.AddScoped<VincularEntraHandler>();

@@ -17,6 +17,7 @@ import { SesionStore } from '../../core/auth/sesion.store';
 
         @if (autenticado()) {
           <a routerLink="/inicio">Inicio</a>
+          <a routerLink="/mis-reservas">Mis reservas</a>
           @if (esAdministrativo()) {
             <a routerLink="/administracion/espacios">Espacios</a>
             <a routerLink="/administracion/usuarios">Usuarios</a>

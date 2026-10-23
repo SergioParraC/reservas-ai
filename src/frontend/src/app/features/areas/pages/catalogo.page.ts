@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 
 import { FiltrosCatalogoComponent } from '../components/filtros-catalogo';
 import { EspacioCard } from '../components/espacio-card';
@@ -102,8 +102,13 @@ import { FiltrosCatalogo as Filtros } from '../models/espacio.models';
     }
   `
 })
-export class CatalogoPage {
+export class CatalogoPage implements OnInit {
   readonly tienda = inject(CatalogoStore);
+
+  /** Refresca el catálogo al entrar, para reflejar altas o cambios administrativos recientes. */
+  ngOnInit(): void {
+    this.tienda.refrescar();
+  }
 
   /** Aplica los filtros emitidos por el formulario. */
   aplicar(filtros: Partial<Filtros>): void {

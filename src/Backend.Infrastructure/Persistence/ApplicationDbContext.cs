@@ -24,6 +24,9 @@ public sealed class ApplicationDbContext : IdentityDbContext<Usuario, Rol, Guid>
     /// <summary>Puestos de cómputo de las áreas.</summary>
     public DbSet<Puesto> Puestos => Set<Puesto>();
 
+    /// <summary>Reservas puntuales de puestos con su token de concurrencia optimista.</summary>
+    public DbSet<Reserva> Reservas => Set<Reserva>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder builder)
     {

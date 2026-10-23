@@ -89,6 +89,18 @@ export class CatalogoStore {
     this.aplicarFiltros({ q: null, categoria: null, aforoMinimo: null, aforoMaximo: null, pagina: 1 });
   }
 
+  /**
+   * Vuelve a consultar con los filtros vigentes. Necesario al reentrar al catálogo porque
+   * el store es de alcance raíz y sobrevive a la navegación entre funcionalidades.
+   */
+  refrescar(): void {
+    this.consultar(this.filtros()).subscribe((pagina) => {
+      if (pagina) {
+        this.resultado.set(pagina);
+      }
+    });
+  }
+
   private consultar(filtros: FiltrosCatalogo) {
     this.cargando.set(true);
     this.error.set(null);

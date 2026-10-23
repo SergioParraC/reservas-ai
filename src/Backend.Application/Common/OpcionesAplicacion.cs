@@ -1,3 +1,6 @@
+using System.Globalization;
+using Backend.Domain.ValueObjects;
+
 namespace Backend.Application.Common;
 
 /// <summary>
@@ -62,6 +65,113 @@ public sealed class OpcionesIdentidad
         return DominioCorreoInstitucional
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToArray();
+    }
+}
+
+/// <summary>
+/// Política de préstamo directo de puestos. Se enlaza desde configuración en infraestructura
+/// y se inyecta como objeto plano para no arrastrar el framework de opciones a la aplicación.
+/// </summary>
+public sealed class OpcionesReservas
+{
+    /// <summary>Nombre de la sección de configuración.</summary>
+    public const string Seccion = "Reservas";
+
+    /// <summary>Antelación mínima, en minutos, para iniciar una reserva nueva.</summary>
+    public int AntelacionMinimaMinutos { get; set; } = 30;
+
+    /// <summary>Horizonte máximo, en días, para consultar y reservar.</summary>
+    public int AntelacionMaximaDias { get; set; } = 14;
+
+    /// <summary>Duración mínima de una franja, en minutos.</summary>
+    public int DuracionMinimaMinutos { get; set; } = 30;
+
+    /// <summary>Duración máxima de una franja, en minutos.</summary>
+    public int DuracionMaximaMinutos { get; set; } = 240;
+
+    /// <summary>Granularidad de alineación de las franjas, en minutos.</summary>
+    public int IntervaloMinutos { get; set; } = 15;
+
+    /// <summary>Margen mínimo, en minutos, para cancelar una reserva.</summary>
+    public int AntelacionCancelacionMinutos { get; set; } = 30;
+
+    /// <summary>Cupo de reservas confirmadas simultáneas por cuenta.</summary>
+    public int MaxReservasActivasPorUsuario { get; set; } = 2;
+
+    /// <summary>Hora de apertura de la jornada institucional (<c>HH:mm</c>).</summary>
+    public string HoraApertura { get; set; } = "07:00";
+
+    /// <summary>Hora de cierre de la jornada institucional (<c>HH:mm</c>).</summary>
+    public string HoraCierre { get; set; } = "21:00";
+
+    /// <summary>Zona horaria institucional usada para construir y mostrar franjas.</summary>
+    public string ZonaHoraria { get; set; } = "America/Bogota";
+
+    /// <summary>Construye la política de dominio a partir de la configuración.</summary>
+    public PoliticaReserva ObtenerPolitica() => new(
+        TimeSpan.FromMinutes(DuracionMinimaMinutos),
+        TimeSpan.FromMinutes(DuracionMaximaMinutos),
+        IntervaloMinutos,
+        TimeSpan.FromMinutes(AntelacionMinimaMinutos),
+        TimeSpan.FromDays(AntelacionMaximaDias),
+        TimeSpan.FromMinutes(AntelacionCancelacionMinutos),
+        TimeOnly.Parse(HoraApertura, CultureInfo.InvariantCulture),
+        TimeOnly.Parse(HoraCierre, CultureInfo.InvariantCulture));
+
+    /// <summary>Resuelve la zona horaria institucional.</summary>
+    public TimeZoneInfo ObtenerZonaHoraria() => TimeZoneInfo.FindSystemTimeZoneById(ZonaHoraria);
+
+    /// <summary>Valida la coherencia de la configuración y falla el arranque si es inválida.</summary>
+    public void Validar()
+    {
+        if (DuracionMinimaMinutos < 1 || DuracionMaximaMinutos < DuracionMinimaMinutos)
+        {
+            throw new InvalidOperationException(
+                "Reservas:DuracionMinimaMinutos y Reservas:DuracionMaximaMinutos no forman un rango válido.");
+        }
+
+        if (IntervaloMinutos < 1 || IntervaloMinutos > DuracionMinimaMinutos)
+        {
+            throw new InvalidOperationException(
+                "Reservas:IntervaloMinutos debe ser positivo y no superar la duración mínima.");
+        }
+
+        if (AntelacionMinimaMinutos < 0 || AntelacionMaximaDias < 1)
+        {
+            throw new InvalidOperationException(
+                "Reservas:AntelacionMinimaMinutos y Reservas:AntelacionMaximaDias no son válidos.");
+        }
+
+        if (AntelacionCancelacionMinutos < 0 || MaxReservasActivasPorUsuario < 1)
+        {
+            throw new InvalidOperationException(
+                "Reservas:AntelacionCancelacionMinutos y Reservas:MaxReservasActivasPorUsuario no son válidos.");
+        }
+
+        var politica = ObtenerPolitica();
+
+        if (politica.HoraCierre <= politica.HoraApertura)
+        {
+            throw new InvalidOperationException(
+                "Reservas:HoraCierre debe ser posterior a Reservas:HoraApertura.");
+        }
+
+        try
+        {
+            ObtenerZonaHoraria();
+        }
+        catch (TimeZoneNotFoundException excepcion)
+        {
+            throw new InvalidOperationException(
+                $"Reservas:ZonaHoraria no corresponde a una zona horaria conocida ('{ZonaHoraria}').",
+                excepcion);
+        }
+        catch (InvalidTimeZoneException excepcion)
+        {
+            throw new InvalidOperationException(
+                $"Reservas:ZonaHoraria no es una zona horaria válida ('{ZonaHoraria}').",
+                excepcion);
+        }
     }
 }
 

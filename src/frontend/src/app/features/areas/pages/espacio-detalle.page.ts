@@ -1,7 +1,12 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { etiquetaCategoria, etiquetaTipoAprobacion, EspacioPublico } from '../models/espacio.models';
+import {
+  etiquetaCategoria,
+  etiquetaTipoAprobacion,
+  EspacioPublico,
+  TipoAprobacion
+} from '../models/espacio.models';
 import { EspaciosApi } from '../services/espacios.api';
 
 /** Detalle público de un área activa, con su fotografía y puestos disponibles. */
@@ -33,6 +38,40 @@ import { EspaciosApi } from '../services/espacios.api';
             <dt>Puestos activos</dt>
             <dd>{{ datos.puestosActivos }}</dd>
           </dl>
+
+          @if (datos.puestos.length > 0) {
+            <section class="puestos">
+              <h2>{{ admitePrestamoDirecto() ? 'Reserva inmediata de puestos' : 'Puestos del área' }}</h2>
+
+              @if (!admitePrestamoDirecto()) {
+                <p class="nota">
+                  El préstamo directo solo está disponible en áreas con aprobación automática.
+                  Esta área requiere aprobación {{ aprobacion().toLowerCase() }}, así que sus puestos no
+                  se reservan desde aquí.
+                </p>
+              }
+
+              <ul>
+                @for (puesto of datos.puestos; track puesto.id) {
+                  <li>
+                    <span class="identificador">{{ puesto.identificador }}</span>
+                    <span class="equipo">{{ puesto.descripcionEquipo ?? 'Equipo de cómputo' }}</span>
+                    @if (admitePrestamoDirecto()) {
+                      <a [routerLink]="['/solicitudes/puesto', puesto.id]">Reservar</a>
+                    }
+                  </li>
+                }
+              </ul>
+            </section>
+          } @else if (admitePrestamoDirecto()) {
+            <p class="nota">Esta área aún no tiene puestos activos para préstamo directo.</p>
+          } @else {
+            <p class="nota">
+              Esta área no tiene puestos de cómputo y su reserva es del área completa, sujeta al flujo
+              de aprobación {{ aprobacion().toLowerCase() }} (solicitud con justificación y revisión).
+              Ese flujo pertenece a la siguiente etapa y todavía no está disponible.
+            </p>
+          }
         </div>
       </article>
     } @else {
@@ -95,6 +134,53 @@ import { EspaciosApi } from '../services/espacios.api';
       color: var(--color-error);
       border-radius: 0.25rem;
     }
+
+    .puestos {
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--color-borde);
+      padding-top: 1rem;
+    }
+
+    .puestos h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.05rem;
+    }
+
+    .puestos ul {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .puestos li {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--color-borde);
+      border-radius: 0.4rem;
+    }
+
+    .identificador {
+      font-weight: 600;
+    }
+
+    .equipo {
+      flex: 1;
+      color: #6b7280;
+    }
+
+    .puestos a {
+      color: var(--color-primario);
+    }
+
+    .nota {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
   `
 })
 export class EspacioDetallePage implements OnInit {
@@ -127,5 +213,10 @@ export class EspacioDetallePage implements OnInit {
   /** Etiqueta del tipo de aprobación. */
   aprobacion(): string {
     return etiquetaTipoAprobacion(this.area()!.tipoAprobacion);
+  }
+
+  /** Indica si el área admite reserva autoconfirmada de sus puestos. */
+  admitePrestamoDirecto(): boolean {
+    return this.area()?.tipoAprobacion === TipoAprobacion.Automatica;
   }
 }

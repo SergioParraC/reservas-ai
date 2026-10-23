@@ -99,9 +99,18 @@ export interface EspacioCatalogo {
   fotografiaUrl: string | null;
 }
 
+/** Puesto publicado en el detalle del catálogo, sin su código QR. */
+export interface PuestoPublico {
+  id: string;
+  identificador: string;
+  descripcionEquipo: string | null;
+  estado: EstadoUnidad;
+}
+
 /** Detalle público de un área activa. */
 export interface EspacioPublico extends EspacioCatalogo {
   puestosActivos: number;
+  puestos: PuestoPublico[];
 }
 
 /** Filtros combinables del catálogo. */

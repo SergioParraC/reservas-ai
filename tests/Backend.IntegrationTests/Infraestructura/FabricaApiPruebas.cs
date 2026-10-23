@@ -119,6 +119,16 @@ internal static class FabricaApiPruebas
         "Espacios__MaximoUnidadesPlantilla",
         "Almacen__RutaBase",
         "Identidad__PermitirAutorregistro",
-        "Identidad__DominioCorreoInstitucional"
+        "Identidad__DominioCorreoInstitucional",
+        "Reservas__AntelacionMinimaMinutos",
+        "Reservas__AntelacionMaximaDias",
+        "Reservas__DuracionMinimaMinutos",
+        "Reservas__DuracionMaximaMinutos",
+        "Reservas__IntervaloMinutos",
+        "Reservas__AntelacionCancelacionMinutos",
+        "Reservas__MaxReservasActivasPorUsuario",
+        "Reservas__HoraApertura",
+        "Reservas__HoraCierre",
+        "Reservas__ZonaHoraria"
     ];
 }

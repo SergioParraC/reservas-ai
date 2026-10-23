@@ -18,6 +18,16 @@ export interface ProblemaRfc7807 {
 
 const MENSAJE_GENERICO = 'Ocurrió un error inesperado. Intente nuevamente.';
 
+/** Mensajes descriptivos de los conflictos del préstamo directo. */
+const MENSAJES_RESERVA: Record<string, string> = {
+  'franja-no-disponible':
+    'La franja seleccionada ya está ocupada. Actualice la disponibilidad e intente de nuevo.',
+  'limite-reservas-alcanzado':
+    'Alcanzó el máximo de reservas activas. Cancele una reserva para continuar.',
+  'fuera-de-plazo': 'La reserva ya no puede cancelarse: falta menos del plazo mínimo.',
+  'puesto-no-reservable': 'El puesto no admite préstamo directo autoconfirmado.'
+};
+
 /**
  * Traduce el contrato RFC 7807: redirige al acceso ante una sesión expirada,
  * muestra el `detail` de los rechazos de permisos y usa un mensaje controlado
@@ -37,6 +47,7 @@ export const problemDetailsInterceptor: HttpInterceptorFn = (solicitud, siguient
 
       const problema = leerProblema(error);
       const tipo = problema?.type ?? '';
+      const slug = tipo.split('/').pop() ?? '';
 
       if (tipo.endsWith('/sesion-expirada') || tipo.endsWith('/sesion-revocada')) {
         sesion.limpiar();
@@ -44,6 +55,8 @@ export const problemDetailsInterceptor: HttpInterceptorFn = (solicitud, siguient
         void router.navigate(['/login'], { queryParams: { motivo: 'sesion-expirada' } });
       } else if (error.status === 403) {
         notificador.error(problema?.detail ?? 'No tiene permisos para realizar esta operación.');
+      } else if (MENSAJES_RESERVA[slug]) {
+        notificador.error(MENSAJES_RESERVA[slug]);
       } else if (problema?.detail) {
         notificador.error(problema.detail);
       } else if (error.status === 401) {

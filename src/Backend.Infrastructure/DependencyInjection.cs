@@ -86,6 +86,10 @@ public static class DependencyInjection
         services.AddSingleton(configuration.GetSection(OpcionesAlmacen.Seccion).Get<OpcionesAlmacen>() ?? new OpcionesAlmacen());
         services.AddSingleton(configuration.GetSection(OpcionesIdentidad.Seccion).Get<OpcionesIdentidad>() ?? new OpcionesIdentidad());
 
+        var opcionesReservas = configuration.GetSection(OpcionesReservas.Seccion).Get<OpcionesReservas>() ?? new OpcionesReservas();
+        opcionesReservas.Validar();
+        services.AddSingleton(opcionesReservas);
+
         services.AddSingleton<IRelojSistema, RelojSistema>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddSingleton<IQrGenerator, QRCoderService>();
@@ -95,6 +99,8 @@ public static class DependencyInjection
         services.AddScoped<IInicializadorIdentity, InicializadorIdentity>();
         services.AddScoped<IEspaciosRepository, EspaciosRepository>();
         services.AddScoped<IConsultaEspacios, ConsultaEspacios>();
+        services.AddScoped<IReservasRepository, ReservasRepository>();
+        services.AddScoped<IConsultaReservas, ConsultaReservas>();
         services.AddScoped<IConsultaUsuarios, ConsultaUsuarios>();
         services.AddScoped<IValidadorTokenEntra, ValidadorTokenEntra>();
 

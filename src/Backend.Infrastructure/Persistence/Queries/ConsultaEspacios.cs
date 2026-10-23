@@ -186,7 +186,16 @@ public sealed class ConsultaEspacios : IConsultaEspacios
                 espacio.Aforo,
                 espacio.TipoAprobacion,
                 espacio.FotografiaRuta,
-                PuestosActivos = espacio.Puestos.Count(puesto => puesto.Estado == EstadoUnidad.Activo)
+                PuestosActivos = espacio.Puestos.Count(puesto => puesto.Estado == EstadoUnidad.Activo),
+                Puestos = espacio.Puestos
+                    .Where(puesto => puesto.Estado == EstadoUnidad.Activo)
+                    .OrderBy(puesto => puesto.Identificador)
+                    .Select(puesto => new PuestoPublico(
+                        puesto.Id,
+                        puesto.Identificador,
+                        puesto.DescripcionEquipo,
+                        puesto.Estado))
+                    .ToArray()
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -200,6 +209,7 @@ public sealed class ConsultaEspacios : IConsultaEspacios
                 fila.Aforo,
                 fila.TipoAprobacion,
                 MapeoEspacios.UrlFotografia(fila.FotografiaRuta),
-                fila.PuestosActivos);
+                fila.PuestosActivos,
+                fila.Puestos);
     }
 }

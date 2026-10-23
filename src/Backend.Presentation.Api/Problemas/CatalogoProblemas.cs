@@ -51,33 +51,43 @@ public static class CatalogoProblemas
     };
 
     /// <summary>Traduce el fallo de un caso de uso al código HTTP del contrato.</summary>
-    public static ObjectResult DesdeResultado(Resultado resultado, HttpContext contexto)
+    /// <param name="resultado">Resultado del caso de uso.</param>
+    /// <param name="contexto">Contexto HTTP de la solicitud.</param>
+    /// <param name="slugConflicto">Slug específico para los conflictos, si el módulo lo define.</param>
+    public static ObjectResult DesdeResultado(Resultado resultado, HttpContext contexto, string? slugConflicto = null)
     {
         ArgumentNullException.ThrowIfNull(resultado);
         ArgumentNullException.ThrowIfNull(contexto);
 
-        return CrearDesdeFallo(resultado.TipoFallo, resultado.Mensaje, resultado.Errores, contexto);
+        return CrearDesdeFallo(resultado.TipoFallo, resultado.Mensaje, resultado.Errores, contexto, slugConflicto);
     }
 
     /// <summary>Traduce el fallo de un caso de uso con valor al código HTTP del contrato.</summary>
-    public static ObjectResult DesdeResultado<T>(Resultado<T> resultado, HttpContext contexto)
+    /// <param name="resultado">Resultado del caso de uso.</param>
+    /// <param name="contexto">Contexto HTTP de la solicitud.</param>
+    /// <param name="slugConflicto">Slug específico para los conflictos, si el módulo lo define.</param>
+    public static ObjectResult DesdeResultado<T>(Resultado<T> resultado, HttpContext contexto, string? slugConflicto = null)
     {
         ArgumentNullException.ThrowIfNull(resultado);
         ArgumentNullException.ThrowIfNull(contexto);
 
-        return CrearDesdeFallo(resultado.TipoFallo, resultado.Mensaje, resultado.Errores, contexto);
+        return CrearDesdeFallo(resultado.TipoFallo, resultado.Mensaje, resultado.Errores, contexto, slugConflicto);
     }
 
     private static ObjectResult CrearDesdeFallo(
         TipoFallo tipoFallo,
         string? mensaje,
         IReadOnlyDictionary<string, string[]> errores,
-        HttpContext contexto)
+        HttpContext contexto,
+        string? slugConflicto)
     {
         var (estado, slug, titulo) = tipoFallo switch
         {
             TipoFallo.Validacion => (StatusCodes.Status400BadRequest, "solicitud-invalida", "Solicitud inválida"),
-            TipoFallo.Conflicto => (StatusCodes.Status409Conflict, "conflicto", "Conflicto con el estado actual"),
+            TipoFallo.Conflicto => (
+                StatusCodes.Status409Conflict,
+                slugConflicto ?? "conflicto",
+                slugConflicto is null ? "Conflicto con el estado actual" : ProblemasReserva.Titulo(slugConflicto)),
             TipoFallo.NoEncontrado => (StatusCodes.Status404NotFound, "recurso-no-encontrado", "Recurso no encontrado"),
             TipoFallo.NoPermitido => (StatusCodes.Status403Forbidden, "operacion-no-permitida", "Operación no permitida"),
             TipoFallo.NoAutorizado => (StatusCodes.Status401Unauthorized, "token-invalido", "Token inválido"),

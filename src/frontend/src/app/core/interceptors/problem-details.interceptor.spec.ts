@@ -89,4 +89,49 @@ describe('problemDetailsInterceptor', () => {
 
     expect(notificador.mensaje()).toBe('Ocurrió un error inesperado. Intente nuevamente.');
   });
+
+  it('explica el conflicto de franja no disponible', () => {
+    http.post('/api/reservas', {}).subscribe({ error: () => undefined });
+    control.expectOne('/api/reservas').flush(
+      {
+        type: 'https://api.reservas-espacios.edu/problems/franja-no-disponible',
+        title: 'Franja no disponible',
+        status: 409,
+        detail: 'La franja solicitada ya está ocupada en el puesto.'
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+
+    expect(notificador.mensaje()).toContain('ya está ocupada');
+  });
+
+  it('explica el límite de reservas activas', () => {
+    http.post('/api/reservas', {}).subscribe({ error: () => undefined });
+    control.expectOne('/api/reservas').flush(
+      {
+        type: 'https://api.reservas-espacios.edu/problems/limite-reservas-alcanzado',
+        title: 'Límite de reservas alcanzado',
+        status: 409,
+        detail: 'La cuenta alcanzó el máximo de 2 reservas activas.'
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+
+    expect(notificador.mensaje()).toContain('máximo de reservas activas');
+  });
+
+  it('explica la cancelación fuera de plazo', () => {
+    http.delete('/api/reservas/reserva-1').subscribe({ error: () => undefined });
+    control.expectOne('/api/reservas/reserva-1').flush(
+      {
+        type: 'https://api.reservas-espacios.edu/problems/fuera-de-plazo',
+        title: 'Fuera de plazo',
+        status: 409,
+        detail: 'La reserva ya no puede cancelarse: faltan menos de 30 minutos para su inicio.'
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+
+    expect(notificador.mensaje()).toContain('ya no puede cancelarse');
+  });
 });

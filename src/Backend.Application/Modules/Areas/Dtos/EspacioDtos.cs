@@ -62,7 +62,15 @@ public sealed record EspacioPublico(
     int Aforo,
     TipoAprobacion TipoAprobacion,
     string? FotografiaUrl,
-    int PuestosActivos);
+    int PuestosActivos,
+    IReadOnlyList<PuestoPublico> Puestos);
+
+/// <summary>Puesto publicado en el detalle del catálogo, sin su código QR.</summary>
+public sealed record PuestoPublico(
+    Guid Id,
+    string Identificador,
+    string? DescripcionEquipo,
+    EstadoUnidad Estado);
 
 /// <summary>Datos de entrada para el alta de un área.</summary>
 public sealed record ComandoCrearEspacio(

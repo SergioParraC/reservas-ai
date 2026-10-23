@@ -39,6 +39,24 @@ export const routes: Routes = [
     loadComponent: () => import('./features/perfil/perfil.page').then((modulo) => modulo.PerfilPage)
   },
   {
+    path: 'mis-reservas',
+    title: 'Mis reservas',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/solicitudes-estudiante/pages/mis-reservas.page').then(
+        (modulo) => modulo.MisReservasPage
+      )
+  },
+  {
+    path: 'solicitudes',
+    title: 'Solicitudes',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/solicitudes-estudiante/solicitudes.routes').then(
+        (modulo) => modulo.SOLICITUDES_ROUTES
+      )
+  },
+  {
     path: 'administracion',
     title: 'Administración',
     canActivate: [authGuard, roleGuard],

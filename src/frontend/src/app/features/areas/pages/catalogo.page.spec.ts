@@ -29,7 +29,8 @@ function crearTienda(elementos: EspacioCatalogo[], total = elementos.length) {
     error: signal<string | null>(null),
     totalPaginas: signal(1),
     aplicarFiltros: jasmine.createSpy('aplicarFiltros'),
-    irAPagina: jasmine.createSpy('irAPagina')
+    irAPagina: jasmine.createSpy('irAPagina'),
+    refrescar: jasmine.createSpy('refrescar')
   };
 }
 
@@ -75,5 +76,14 @@ describe('CatalogoPage', () => {
 
     expect(tienda.aplicarFiltros).toHaveBeenCalledWith({ q: 'redes' });
     expect(tienda.irAPagina).toHaveBeenCalled();
+  });
+
+  it('refresca el catálogo al entrar a la vista', () => {
+    const tienda = configurar([AREA]);
+    const fixture = TestBed.createComponent(CatalogoPage);
+
+    fixture.detectChanges();
+
+    expect(tienda.refrescar).toHaveBeenCalled();
   });
 });

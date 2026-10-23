@@ -127,6 +127,54 @@ namespace Backend.Infrastructure.Persistence.Migrations
                     b.ToTable("Puestos", (string)null);
                 });
 
+            modelBuilder.Entity("Backend.Domain.Entities.Reserva", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CanceladaEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreadaEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("Fin")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("Inicio")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("PuestoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PuestoId", "Inicio")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Reservas_PuestoId_Inicio_Activa")
+                        .HasFilter("[Estado] = 1");
+
+                    b.HasIndex("UsuarioId", "Inicio")
+                        .HasDatabaseName("IX_Reservas_UsuarioId_Inicio");
+
+                    b.HasIndex("PuestoId", "Inicio", "Fin")
+                        .HasDatabaseName("IX_Reservas_PuestoId_Ventana");
+
+                    b.ToTable("Reservas", (string)null);
+                });
+
             modelBuilder.Entity("Backend.Infrastructure.Persistence.Identity.Rol", b =>
                 {
                     b.Property<Guid>("Id")
@@ -358,6 +406,23 @@ namespace Backend.Infrastructure.Persistence.Migrations
                         .HasForeignKey("EspacioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.Reserva", b =>
+                {
+                    b.HasOne("Backend.Domain.Entities.Puesto", null)
+                        .WithMany()
+                        .HasForeignKey("PuestoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Reservas_Puestos");
+
+                    b.HasOne("Backend.Infrastructure.Persistence.Identity.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_Reservas_AspNetUsers");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

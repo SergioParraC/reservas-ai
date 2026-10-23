@@ -88,6 +88,17 @@ describe('CatalogoStore', () => {
     expect(store.filtros().pagina).toBe(2);
   }));
 
+  it('refresca la consulta con los filtros vigentes', () => {
+    store.refrescar();
+
+    const solicitud = control.expectOne((peticion) => peticion.url.endsWith('/api/catalogo/espacios'));
+
+    expect(solicitud.request.params.get('pagina')).toBe('1');
+    solicitud.flush({ elementos: [], total: 2, pagina: 1, tamano: 12 });
+
+    expect(store.resultado()?.total).toBe(2);
+  });
+
   it('no repite la consulta cuando los filtros no cambian', fakeAsync(() => {
     store.aplicarFiltros({ q: 'redes' });
     store.aplicarFiltros({ q: 'redes' });
