@@ -25,7 +25,9 @@ public sealed record EspacioResumen(
     int PuestosActivos,
     DateTimeOffset CreadoEn,
     DateTimeOffset ActualizadoEn,
-    string RowVersion);
+    string RowVersion,
+    TipoModalidadPrestamo TipoModalidadPrestamo = TipoModalidadPrestamo.AreaCompleta,
+    TipoElementoPrestamo TipoElementoPrestamo = TipoElementoPrestamo.LaboratorioEspecializado);
 
 /// <summary>Detalle administrativo de un área con sus puestos.</summary>
 public sealed record EspacioDetalle(
@@ -41,7 +43,9 @@ public sealed record EspacioDetalle(
     DateTimeOffset CreadoEn,
     DateTimeOffset ActualizadoEn,
     string RowVersion,
-    IReadOnlyList<PuestoDetalle> Puestos);
+    IReadOnlyList<PuestoDetalle> Puestos,
+    TipoModalidadPrestamo TipoModalidadPrestamo = TipoModalidadPrestamo.AreaCompleta,
+    TipoElementoPrestamo TipoElementoPrestamo = TipoElementoPrestamo.LaboratorioEspecializado);
 
 /// <summary>Elemento del catálogo público; omite el código QR y la ruta interna del archivo.</summary>
 public sealed record EspacioCatalogo(
@@ -51,7 +55,9 @@ public sealed record EspacioCatalogo(
     CategoriaEspacio Categoria,
     int Aforo,
     TipoAprobacion TipoAprobacion,
-    string? FotografiaUrl);
+    string? FotografiaUrl,
+    TipoModalidadPrestamo TipoModalidadPrestamo = TipoModalidadPrestamo.AreaCompleta,
+    TipoElementoPrestamo TipoElementoPrestamo = TipoElementoPrestamo.LaboratorioEspecializado);
 
 /// <summary>Detalle público de un área activa.</summary>
 public sealed record EspacioPublico(
@@ -63,7 +69,31 @@ public sealed record EspacioPublico(
     TipoAprobacion TipoAprobacion,
     string? FotografiaUrl,
     int PuestosActivos,
-    IReadOnlyList<PuestoPublico> Puestos);
+    IReadOnlyList<PuestoPublico> Puestos,
+    TipoModalidadPrestamo TipoModalidadPrestamo = TipoModalidadPrestamo.AreaCompleta,
+    TipoElementoPrestamo TipoElementoPrestamo = TipoElementoPrestamo.LaboratorioEspecializado);
+
+/// <summary>
+/// Datos mínimos del área que necesitan las series y las solicitudes para validar modalidad,
+/// estado y competencia de aprobación sin cargar el agregado completo.
+/// </summary>
+public sealed record EspacioParaReserva(
+    Guid Id,
+    string Nombre,
+    EstadoUnidad Estado,
+    TipoAprobacion TipoAprobacion,
+    TipoModalidadPrestamo TipoModalidadPrestamo,
+    TipoElementoPrestamo TipoElementoPrestamo)
+{
+    /// <summary>Indica si el área está activa y se presta como área completa.</summary>
+    public bool AdmiteReservaDeArea =>
+        Estado == EstadoUnidad.Activo && TipoModalidadPrestamo == TipoModalidadPrestamo.AreaCompleta;
+
+    /// <summary>Indica si el área admite el préstamo directo de sus puestos.</summary>
+    public bool AdmitePrestamoDirecto =>
+        Estado == EstadoUnidad.Activo && TipoModalidadPrestamo != TipoModalidadPrestamo.AreaCompleta;
+}
+
 
 /// <summary>Puesto publicado en el detalle del catálogo, sin su código QR.</summary>
 public sealed record PuestoPublico(
@@ -78,7 +108,9 @@ public sealed record ComandoCrearEspacio(
     string Ubicacion,
     CategoriaEspacio Categoria,
     int Aforo,
-    TipoAprobacion TipoAprobacion);
+    TipoAprobacion TipoAprobacion,
+    TipoModalidadPrestamo TipoModalidadPrestamo = TipoModalidadPrestamo.AreaCompleta,
+    TipoElementoPrestamo TipoElementoPrestamo = TipoElementoPrestamo.LaboratorioEspecializado);
 
 /// <summary>Datos de entrada para la edición de un área; nunca incluye el código QR.</summary>
 public sealed record ComandoActualizarEspacio(
@@ -88,7 +120,9 @@ public sealed record ComandoActualizarEspacio(
     int Aforo,
     TipoAprobacion TipoAprobacion,
     EstadoUnidad Estado,
-    string? RowVersion);
+    string? RowVersion,
+    TipoModalidadPrestamo TipoModalidadPrestamo = TipoModalidadPrestamo.AreaCompleta,
+    TipoElementoPrestamo TipoElementoPrestamo = TipoElementoPrestamo.LaboratorioEspecializado);
 
 /// <summary>Datos de entrada para el alta de un puesto.</summary>
 public sealed record ComandoCrearPuesto(string Identificador, string? DescripcionEquipo);

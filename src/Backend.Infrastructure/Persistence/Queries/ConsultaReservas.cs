@@ -37,7 +37,8 @@ public sealed class ConsultaReservas : IConsultaReservas
                     EspacioId = espacio.Id,
                     EspacioNombre = espacio.Nombre,
                     EstadoEspacio = espacio.Estado,
-                    espacio.TipoAprobacion
+                    espacio.TipoAprobacion,
+                    espacio.TipoModalidadPrestamo
                 })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -50,7 +51,8 @@ public sealed class ConsultaReservas : IConsultaReservas
                 fila.EspacioId,
                 fila.EspacioNombre,
                 fila.EstadoEspacio,
-                fila.TipoAprobacion);
+                fila.TipoAprobacion,
+                fila.TipoModalidadPrestamo);
     }
 
     /// <inheritdoc />

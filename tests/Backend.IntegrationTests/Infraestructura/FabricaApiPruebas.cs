@@ -64,7 +64,19 @@ internal static class FabricaApiPruebas
             ["Seed:AdminEmail"] = CorreoAdmin,
             ["Seed:AdminPassword"] = ContrasenaAdmin,
             ["Seed:AdminNombre"] = "Administradora de Pruebas",
-            ["Cors:OrigenesPermitidos:0"] = OrigenSpa
+            ["Cors:OrigenesPermitidos:0"] = OrigenSpa,
+            ["Smtp:Habilitado"] = "false",
+            ["Smtp:Host"] = "localhost",
+            ["Smtp:Puerto"] = "1025",
+            ["Smtp:RemitenteCorreo"] = "reservas@uninpahu.edu.co",
+            ["Calendario:MinutosCacheCalendario"] = "1",
+            ["Calendario:PeriodoActivoRequerido"] = "true",
+            ["Semestre:SemanasMaximasPorSerie"] = "20",
+            ["Semestre:AntelacionMinimaDias"] = "3",
+            ["Solicitudes:TamanoMaximoPdfBytes"] = "5242880",
+            ["Solicitudes:MaxSolicitudesActivasPorUsuario"] = "3",
+            ["Solicitudes:LongitudMinimaMotivoRechazo"] = "10",
+            ["Solicitudes:AntelacionMinimaMinutos"] = "30"
         };
 
         if (sobrescribir is not null)
@@ -129,6 +141,24 @@ internal static class FabricaApiPruebas
         "Reservas__MaxReservasActivasPorUsuario",
         "Reservas__HoraApertura",
         "Reservas__HoraCierre",
-        "Reservas__ZonaHoraria"
+        "Reservas__ZonaHoraria",
+        "Solicitudes__TamanoMaximoPdfBytes",
+        "Solicitudes__MaxSolicitudesActivasPorUsuario",
+        "Solicitudes__LongitudMinimaMotivoRechazo",
+        "Solicitudes__AntelacionMinimaMinutos",
+        "Semestre__SemanasMaximasPorSerie",
+        "Semestre__AntelacionMinimaDias",
+        "Calendario__PeriodoActivoRequerido",
+        "Calendario__MinutosCacheCalendario",
+        "Calendario__FeriadosNacionales",
+        "Smtp__Host",
+        "Smtp__Puerto",
+        "Smtp__UsarSsl",
+        "Smtp__Usuario",
+        "Smtp__Contrasena",
+        "Smtp__RemitenteCorreo",
+        "Smtp__RemitenteNombre",
+        "Smtp__Habilitado",
+        "Smtp__IntervaloDespachoSegundos"
     ];
 }

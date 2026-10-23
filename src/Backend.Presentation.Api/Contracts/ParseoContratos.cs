@@ -13,4 +13,22 @@ public static class ParseoContratos
             && Enum.TryParse(texto.Trim(), ignoreCase: true, out valor)
             && Enum.IsDefined(valor);
     }
+
+    /// <summary>Convierte una hora local en formato <c>HH:mm</c>.</summary>
+    public static bool TryParseHora(string? texto, out TimeOnly hora) =>
+        TimeOnly.TryParse(
+            texto,
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None,
+            out hora);
+
+    /// <summary>Convierte una fecha en formato <c>yyyy-MM-dd</c>.</summary>
+    public static bool TryParseFecha(string? texto, out DateOnly fecha) =>
+        DateOnly.TryParseExact(
+            texto,
+            "yyyy-MM-dd",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None,
+            out fecha);
 }
+

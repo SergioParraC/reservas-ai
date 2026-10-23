@@ -56,6 +56,30 @@
       </select>
     </label>
 
+    <label>
+      Modalidad de préstamo
+      <select formControlName="tipoModalidadPrestamo">
+        @for (modalidad of modalidades; track modalidad.valor) {
+          <option [ngValue]="modalidad.valor">{{ modalidad.etiqueta }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Elemento de préstamo
+      <select formControlName="tipoElementoPrestamo">
+        @for (elemento of elementosDisponibles(); track elemento) {
+          <option [ngValue]="elemento">{{ etiquetaElemento(elemento) }}</option>
+        }
+      </select>
+      @if (errorDe('tipoModalidadPrestamo') ?? errorDe('tipoElementoPrestamo') ?? combinacionInvalida()) {
+        <span class="validacion">
+          {{ errorDe('tipoModalidadPrestamo') ?? errorDe('tipoElementoPrestamo') ??
+            'La combinación de modalidad y elemento no es válida.' }}
+        </span>
+      }
+    </label>
+
     @if (editando()) {
       <label>
         Estado

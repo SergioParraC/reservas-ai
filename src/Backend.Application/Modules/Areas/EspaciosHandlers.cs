@@ -42,7 +42,9 @@ public sealed class CrearEspacioHandler
                 _opciones.AforoMaximo,
                 comando.TipoAprobacion,
                 _reloj.Ahora,
-                CodigoQR.Generar());
+                CodigoQR.Generar(),
+                comando.TipoModalidadPrestamo,
+                comando.TipoElementoPrestamo);
 
             for (var intento = 0; intento < IntentosCodigoQr; intento++)
             {
@@ -69,7 +71,9 @@ public sealed class CrearEspacioHandler
                     _opciones.AforoMaximo,
                     comando.TipoAprobacion,
                     _reloj.Ahora,
-                    CodigoQR.Generar());
+                    CodigoQR.Generar(),
+                    comando.TipoModalidadPrestamo,
+                    comando.TipoElementoPrestamo);
             }
 
             return Resultado<EspacioDetalle>.Fallo(
@@ -100,18 +104,24 @@ public sealed class CrearEspacioHandler
 public sealed class ActualizarEspacioHandler
 {
     private readonly IEspaciosRepository _repositorio;
+    private readonly IConsultaOcupacionEspacio _ocupacion;
     private readonly OpcionesEspacios _opciones;
     private readonly IRelojSistema _reloj;
 
     /// <summary>Inicializa el caso de uso con sus puertos y la política institucional.</summary>
-    public ActualizarEspacioHandler(IEspaciosRepository repositorio, OpcionesEspacios opciones, IRelojSistema reloj)
+    public ActualizarEspacioHandler(
+        IEspaciosRepository repositorio,
+        IConsultaOcupacionEspacio ocupacion,
+        OpcionesEspacios opciones,
+        IRelojSistema reloj)
     {
         _repositorio = repositorio ?? throw new ArgumentNullException(nameof(repositorio));
+        _ocupacion = ocupacion ?? throw new ArgumentNullException(nameof(ocupacion));
         _opciones = opciones ?? throw new ArgumentNullException(nameof(opciones));
         _reloj = reloj ?? throw new ArgumentNullException(nameof(reloj));
     }
 
-    /// <summary>Actualiza los datos descriptivos y el estado del área.</summary>
+    /// <summary>Actualiza los datos descriptivos, la modalidad y el estado del área.</summary>
     public async Task<Resultado<EspacioDetalle>> HandleAsync(
         Guid espacioId,
         ComandoActualizarEspacio comando,
@@ -132,6 +142,17 @@ public sealed class ActualizarEspacioHandler
             return ConflictoConcurrencia();
         }
 
+        var cambiaModalidad = espacio.CambiaModalidad(comando.TipoModalidadPrestamo, comando.TipoElementoPrestamo);
+
+        if (cambiaModalidad
+            && await _ocupacion.HayOcupacionFuturaAsync(espacioId, _reloj.Ahora, cancellationToken))
+        {
+            return Resultado<EspacioDetalle>.Fallo(
+                TipoFallo.Conflicto,
+                MensajesEspacio.ModalidadConOcupacion,
+                MapeoEspacios.Errores("tipoModalidadPrestamo", MensajesEspacio.ModalidadConOcupacion));
+        }
+
         try
         {
             espacio.Actualizar(
@@ -142,7 +163,9 @@ public sealed class ActualizarEspacioHandler
                 comando.Estado,
                 comando.Aforo,
                 _opciones.AforoMaximo,
-                _reloj.Ahora);
+                _reloj.Ahora,
+                comando.TipoModalidadPrestamo,
+                comando.TipoElementoPrestamo);
 
             if (await _repositorio.ExisteNombreUbicacionAsync(espacio.Nombre, espacio.Ubicacion, espacio.Id, cancellationToken))
             {

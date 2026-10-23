@@ -27,6 +27,24 @@ public sealed class ApplicationDbContext : IdentityDbContext<Usuario, Rol, Guid>
     /// <summary>Reservas puntuales de puestos con su token de concurrencia optimista.</summary>
     public DbSet<Reserva> Reservas => Set<Reserva>();
 
+    /// <summary>Periodos académicos del calendario institucional.</summary>
+    public DbSet<PeriodoAcademico> PeriodosAcademicos => Set<PeriodoAcademico>();
+
+    /// <summary>Franjas no operativas globales del calendario institucional.</summary>
+    public DbSet<FranjaNoOperativa> FranjasNoOperativas => Set<FranjaNoOperativa>();
+
+    /// <summary>Series semestrales de áreas completas.</summary>
+    public DbSet<ReservaRecurrente> ReservasRecurrentes => Set<ReservaRecurrente>();
+
+    /// <summary>Agenda única de las áreas: series y solicitudes aprobadas.</summary>
+    public DbSet<ReservaEspacio> ReservasEspacio => Set<ReservaEspacio>();
+
+    /// <summary>Solicitudes de préstamo con su pre-informe y su estado auditable.</summary>
+    public DbSet<SolicitudPrestamo> SolicitudesPrestamo => Set<SolicitudPrestamo>();
+
+    /// <summary>Cola persistida de notificaciones por correo.</summary>
+    public DbSet<CorreoPendiente> CorreosPendientes => Set<CorreoPendiente>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder builder)
     {

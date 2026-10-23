@@ -87,10 +87,21 @@ public static class CatalogoProblemas
             TipoFallo.Conflicto => (
                 StatusCodes.Status409Conflict,
                 slugConflicto ?? "conflicto",
-                slugConflicto is null ? "Conflicto con el estado actual" : ProblemasReserva.Titulo(slugConflicto)),
+                slugConflicto is null ? "Conflicto con el estado actual" : ProblemasTitulos.Titulo(slugConflicto)),
             TipoFallo.NoEncontrado => (StatusCodes.Status404NotFound, "recurso-no-encontrado", "Recurso no encontrado"),
-            TipoFallo.NoPermitido => (StatusCodes.Status403Forbidden, "operacion-no-permitida", "Operación no permitida"),
+            TipoFallo.NoPermitido => (
+                StatusCodes.Status403Forbidden,
+                slugConflicto ?? "operacion-no-permitida",
+                slugConflicto is null ? "Operación no permitida" : ProblemasTitulos.Titulo(slugConflicto)),
             TipoFallo.NoAutorizado => (StatusCodes.Status401Unauthorized, "token-invalido", "Token inválido"),
+            TipoFallo.ArchivoDemasiadoGrande => (
+                StatusCodes.Status413PayloadTooLarge,
+                slugConflicto ?? ProblemasSolicitud.ArchivoDemasiadoGrande,
+                ProblemasTitulos.Titulo(slugConflicto ?? ProblemasSolicitud.ArchivoDemasiadoGrande)),
+            TipoFallo.TipoNoSoportado => (
+                StatusCodes.Status415UnsupportedMediaType,
+                slugConflicto ?? ProblemasSolicitud.ArchivoNoValido,
+                ProblemasTitulos.Titulo(slugConflicto ?? ProblemasSolicitud.ArchivoNoValido)),
             _ => (StatusCodes.Status500InternalServerError, "error-interno", "Error interno")
         };
 

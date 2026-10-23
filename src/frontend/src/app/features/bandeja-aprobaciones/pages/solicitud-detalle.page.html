@@ -1,0 +1,67 @@
+<a routerLink="/bandeja-aprobaciones" class="volver">← Volver a la bandeja</a>
+
+@if (tienda.error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+}
+
+@if (tienda.aviso(); as mensaje) {
+  <p class="aviso" role="status">{{ mensaje }}</p>
+}
+
+@if (solicitud(); as item) {
+  <article class="detalle">
+    <header>
+      <h1>{{ item.materia }}</h1>
+      <span class="chip">{{ etiqueta(item.estado) }}</span>
+    </header>
+
+    <dl>
+      <dt>Solicitante</dt>
+      <dd>{{ item.solicitanteNombre }} · {{ item.solicitanteCorreo }}</dd>
+      <dt>Área</dt>
+      <dd>{{ item.espacioNombre }}</dd>
+      <dt>Franja</dt>
+      <dd>{{ item.inicio | date: 'dd/MM/yyyy HH:mm' }} — {{ item.fin | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      <dt>Radicada</dt>
+      <dd>{{ item.radicadaEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
+    </dl>
+
+    <div class="acciones">
+      <button type="button" class="secundario" (click)="abrirPdf()">Abrir pre-informe</button>
+
+      @if (item.estado === estadoRadicado) {
+        <button type="button" (click)="tomarEnRevision()" [disabled]="procesando()">
+          Tomar en revisión
+        </button>
+      }
+
+      @if (item.estado === estadoRevision) {
+        <button type="button" class="aprobar" (click)="aprobar()" [disabled]="procesando()">
+          Aprobar
+        </button>
+        <button
+          type="button"
+          class="peligro"
+          (click)="dialogoAbierto.set(true)"
+          [disabled]="procesando()"
+        >
+          Rechazar
+        </button>
+      }
+    </div>
+
+    @if (item.estado === estadoAprobado || item.estado === estadoRechazado) {
+      <p class="terminal">La solicitud es terminal: no admite nuevas transiciones.</p>
+    }
+  </article>
+} @else if (tienda.cargando()) {
+  <p role="status">Cargando solicitud…</p>
+} @else {
+  <p class="error" role="alert">La solicitud no existe o no pertenece a su competencia.</p>
+}
+
+<app-dialogo-rechazo
+  [abierto]="dialogoAbierto()"
+  (confirmar)="rechazar($event)"
+  (cancelar)="dialogoAbierto.set(false)"
+/>

@@ -1,0 +1,89 @@
+<a routerLink="/catalogo" class="volver">← Volver al catálogo</a>
+
+<h1>Radicar solicitud</h1>
+
+@if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+}
+
+@if (radicada(); as solicitud) {
+  <section class="exito" role="status">
+    <h2>Solicitud radicada</h2>
+    <p>
+      Su solicitud quedó en estado <strong>Radicado</strong> con el pre-informe
+      <strong>{{ solicitud.archivoNombreOriginal }}</strong>.
+    </p>
+    <p class="folio">Folio: {{ solicitud.id }}</p>
+    <a routerLink="/catalogo">Volver al catálogo</a>
+  </section>
+} @else {
+  @if (area(); as datos) {
+    <p class="area">
+      <strong>{{ datos.nombre }}</strong> · {{ datos.ubicacion }} · Aforo {{ datos.aforo }}
+    </p>
+  }
+
+  <app-calendario-resumen class="resumen" />
+
+  <form [formGroup]="formulario" (ngSubmit)="radicar()" class="formulario" novalidate>
+    <label>
+      Materia o actividad
+      <input formControlName="materia" maxlength="120" />
+      @if (materiaInvalida()) {
+        <span class="validacion">La materia es obligatoria (máximo 120 caracteres).</span>
+      }
+    </label>
+
+    <label>
+      Docente responsable
+      <input formControlName="docenteResponsable" maxlength="150" />
+      @if (docenteInvalido()) {
+        <span class="validacion">El docente responsable es obligatorio (máximo 150 caracteres).</span>
+      }
+    </label>
+
+    <label class="ancho">
+      Justificación
+      <textarea formControlName="justificacion" rows="3" maxlength="1000"></textarea>
+      @if (justificacionInvalida()) {
+        <span class="validacion">La justificación es obligatoria (máximo 1000 caracteres).</span>
+      }
+    </label>
+
+    <label>
+      Fecha
+      <input type="date" formControlName="fecha" />
+    </label>
+
+    <label>
+      Hora de inicio
+      <input type="time" formControlName="horaInicio" />
+    </label>
+
+    <label>
+      Hora de fin
+      <input type="time" formControlName="horaFin" />
+      @if (horasInvalidas()) {
+        <span class="validacion">La hora de fin debe ser posterior a la de inicio.</span>
+      }
+    </label>
+
+    <label class="ancho">
+      Pre-informe (PDF, máximo 5 MB)
+      <input type="file" accept="application/pdf" (change)="seleccionarArchivo($event)" />
+      @if (archivo(); as archivoSeleccionado) {
+        <span class="archivo">{{ archivoSeleccionado.name }} · {{ tamano(archivoSeleccionado.size) }}</span>
+      }
+      @if (errorArchivo(); as mensaje) {
+        <span class="validacion">{{ mensaje }}</span>
+      }
+    </label>
+
+    <div class="acciones">
+      <button type="submit" [disabled]="enviando()">
+        {{ enviando() ? 'Radicando…' : 'Radicar solicitud' }}
+      </button>
+      <a routerLink="/catalogo">Cancelar</a>
+    </div>
+  </form>
+}

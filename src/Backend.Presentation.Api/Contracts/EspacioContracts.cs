@@ -52,6 +52,14 @@ public class SolicitudCrearEspacio
     /// <summary>Tipo de aprobación de reservas (nombre del enum).</summary>
     [Required(ErrorMessage = "El tipo de aprobación es obligatorio.")]
     public string TipoAprobacion { get; init; } = string.Empty;
+
+    /// <summary>Modalidad de préstamo (nombre del enum).</summary>
+    [Required(ErrorMessage = "La modalidad de préstamo es obligatoria.")]
+    public string TipoModalidadPrestamo { get; init; } = string.Empty;
+
+    /// <summary>Elemento de préstamo (nombre del enum).</summary>
+    [Required(ErrorMessage = "El elemento de préstamo es obligatorio.")]
+    public string TipoElementoPrestamo { get; init; } = string.Empty;
 }
 
 /// <summary>Datos de edición de un área; nunca incluye el código QR.</summary>

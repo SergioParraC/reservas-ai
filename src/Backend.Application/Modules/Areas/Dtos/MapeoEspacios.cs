@@ -51,7 +51,9 @@ public static class MapeoEspacios
             espacio.Puestos
                 .OrderBy(puesto => puesto.Identificador, StringComparer.OrdinalIgnoreCase)
                 .Select(ADetalle)
-                .ToArray());
+                .ToArray(),
+            espacio.TipoModalidadPrestamo,
+            espacio.TipoElementoPrestamo);
     }
 
     /// <summary>Proyecta un área al resumen del listado administrativo.</summary>
@@ -72,7 +74,9 @@ public static class MapeoEspacios
             espacio.PuestosActivos,
             espacio.CreadoEn,
             espacio.ActualizadoEn,
-            Convert.ToBase64String(espacio.RowVersion));
+            Convert.ToBase64String(espacio.RowVersion),
+            espacio.TipoModalidadPrestamo,
+            espacio.TipoElementoPrestamo);
     }
 
     /// <summary>Construye el diccionario de errores por campo que consume el contrato RFC 7807.</summary>
@@ -86,6 +90,8 @@ public static class MapeoEspacios
         MensajesEspacio.UbicacionRequerida or MensajesEspacio.UbicacionDemasiadoLarga => "ubicacion",
         MensajesEspacio.CategoriaInvalida => "categoria",
         MensajesEspacio.TipoAprobacionInvalido => "tipoAprobacion",
+        MensajesEspacio.ModalidadInvalida or MensajesEspacio.CombinacionPrestamoInvalida => "tipoModalidadPrestamo",
+        MensajesEspacio.ElementoInvalido => "tipoElementoPrestamo",
         MensajesEspacio.EstadoInvalido => "estado",
         MensajesEspacio.PuestoIdentificadorRequerido or MensajesEspacio.PuestoIdentificadorDemasiadoLargo => "identificador",
         MensajesEspacio.DescripcionEquipoDemasiadoLarga => "descripcionEquipo",

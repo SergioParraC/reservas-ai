@@ -79,7 +79,7 @@ public sealed class PuestosController : ControllerBase
             : CatalogoProblemas.DesdeResultado(
                 resultado,
                 HttpContext,
-                ProblemasReserva.SlugConflicto(resultado.Mensaje));
+                ProblemasSolicitud.SlugConflicto(resultado.Mensaje));
     }
 
     /// <summary>Devuelve el SVG del puesto; una unidad inactiva conserva su código original.</summary>

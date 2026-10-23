@@ -23,6 +23,51 @@ export enum EstadoUnidad {
   Inactivo = 2
 }
 
+/** Forma en que se presta el área, espejo del enum de la API. */
+export enum TipoModalidadPrestamo {
+  AreaCompleta = 1,
+  PuestoIndividual = 2,
+  SubZonaCompartida = 3
+}
+
+/** Elemento físico que se presta en el área. */
+export enum TipoElementoPrestamo {
+  EquipoComputo = 1,
+  LaboratorioEspecializado = 2,
+  ZonaDescansoJuegos = 3,
+  Auditorio = 4
+}
+
+/** Modalidades con su etiqueta legible. */
+export const MODALIDADES: ReadonlyArray<{ valor: TipoModalidadPrestamo; etiqueta: string }> = [
+  { valor: TipoModalidadPrestamo.AreaCompleta, etiqueta: 'Área completa' },
+  { valor: TipoModalidadPrestamo.PuestoIndividual, etiqueta: 'Puesto individual' },
+  { valor: TipoModalidadPrestamo.SubZonaCompartida, etiqueta: 'Sub-zona compartida' }
+];
+
+/** Elementos con su etiqueta legible. */
+export const ELEMENTOS: ReadonlyArray<{ valor: TipoElementoPrestamo; etiqueta: string }> = [
+  { valor: TipoElementoPrestamo.EquipoComputo, etiqueta: 'Equipo de cómputo' },
+  { valor: TipoElementoPrestamo.LaboratorioEspecializado, etiqueta: 'Laboratorio especializado' },
+  { valor: TipoElementoPrestamo.ZonaDescansoJuegos, etiqueta: 'Zona de descanso o juegos' },
+  { valor: TipoElementoPrestamo.Auditorio, etiqueta: 'Auditorio' }
+];
+
+/** Matriz institucional de combinaciones válidas entre modalidad y elemento. */
+export const COMBINACIONES_VALIDAS: Record<TipoModalidadPrestamo, readonly TipoElementoPrestamo[]> = {
+  [TipoModalidadPrestamo.AreaCompleta]: [
+    TipoElementoPrestamo.LaboratorioEspecializado,
+    TipoElementoPrestamo.Auditorio,
+    TipoElementoPrestamo.ZonaDescansoJuegos
+  ],
+  [TipoModalidadPrestamo.PuestoIndividual]: [TipoElementoPrestamo.EquipoComputo],
+  [TipoModalidadPrestamo.SubZonaCompartida]: [
+    TipoElementoPrestamo.EquipoComputo,
+    TipoElementoPrestamo.ZonaDescansoJuegos
+  ]
+};
+
+
 /** Política espejo de `Espacios:AforoMaximo` publicada por la API. */
 export const AFORO_MAXIMO = 500;
 
@@ -81,6 +126,8 @@ export interface EspacioResumen {
   creadoEn: string;
   actualizadoEn: string;
   rowVersion: string;
+  tipoModalidadPrestamo: TipoModalidadPrestamo;
+  tipoElementoPrestamo: TipoElementoPrestamo;
 }
 
 /** Detalle administrativo con sus puestos. */
@@ -97,6 +144,8 @@ export interface EspacioCatalogo {
   aforo: number;
   tipoAprobacion: TipoAprobacion;
   fotografiaUrl: string | null;
+  tipoModalidadPrestamo: TipoModalidadPrestamo;
+  tipoElementoPrestamo: TipoElementoPrestamo;
 }
 
 /** Puesto publicado en el detalle del catálogo, sin su código QR. */
@@ -139,6 +188,8 @@ export interface SolicitudCrearEspacio {
   categoria: CategoriaEspacio;
   aforo: number;
   tipoAprobacion: TipoAprobacion;
+  tipoModalidadPrestamo: TipoModalidadPrestamo;
+  tipoElementoPrestamo: TipoElementoPrestamo;
 }
 
 /** Edición de un área; el código QR nunca se envía. */
@@ -183,4 +234,37 @@ export function etiquetaCategoria(valor: CategoriaEspacio): string {
 /** Etiqueta legible de un tipo de aprobación. */
 export function etiquetaTipoAprobacion(valor: TipoAprobacion): string {
   return TIPOS_APROBACION.find((tipo) => tipo.valor === valor)?.etiqueta ?? 'Automática';
+}
+
+/** Nombre del enum de modalidad que espera la API. */
+export function nombreModalidad(valor: TipoModalidadPrestamo): string {
+  return TipoModalidadPrestamo[valor] ?? 'AreaCompleta';
+}
+
+/** Nombre del enum de elemento que espera la API. */
+export function nombreElemento(valor: TipoElementoPrestamo): string {
+  return TipoElementoPrestamo[valor] ?? 'LaboratorioEspecializado';
+}
+
+/** Etiqueta legible de la modalidad. */
+export function etiquetaModalidad(valor: TipoModalidadPrestamo): string {
+  return MODALIDADES.find((modalidad) => modalidad.valor === valor)?.etiqueta ?? 'Área completa';
+}
+
+/** Etiqueta legible del elemento de préstamo. */
+export function etiquetaElemento(valor: TipoElementoPrestamo): string {
+  return ELEMENTOS.find((elemento) => elemento.valor === valor)?.etiqueta ?? 'Laboratorio especializado';
+}
+
+/** Elementos admitidos para la modalidad indicada. */
+export function elementosDe(modalidad: TipoModalidadPrestamo): readonly TipoElementoPrestamo[] {
+  return COMBINACIONES_VALIDAS[modalidad] ?? [];
+}
+
+/** Indica si la combinación de modalidad y elemento es coherente. */
+export function combinacionValida(
+  modalidad: TipoModalidadPrestamo,
+  elemento: TipoElementoPrestamo
+): boolean {
+  return elementosDe(modalidad).includes(elemento);
 }

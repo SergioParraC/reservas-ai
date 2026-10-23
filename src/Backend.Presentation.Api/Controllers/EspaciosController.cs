@@ -117,13 +117,33 @@ public sealed class EspaciosController : ControllerBase
             return EnumInvalido("tipoAprobacion", "El tipo de aprobación del área no es válido.");
         }
 
+        if (!ParseoContratos.TryParseEnum<TipoModalidadPrestamo>(solicitud.TipoModalidadPrestamo, out var modalidad))
+        {
+            return EnumInvalido("tipoModalidadPrestamo", "La modalidad de préstamo del área no es válida.");
+        }
+
+        if (!ParseoContratos.TryParseEnum<TipoElementoPrestamo>(solicitud.TipoElementoPrestamo, out var elemento))
+        {
+            return EnumInvalido("tipoElementoPrestamo", "El elemento de préstamo del área no es válido.");
+        }
+
         var resultado = await _crear.HandleAsync(
-            new ComandoCrearEspacio(solicitud.Nombre, solicitud.Ubicacion, categoria, solicitud.Aforo, tipoAprobacion),
+            new ComandoCrearEspacio(
+                solicitud.Nombre,
+                solicitud.Ubicacion,
+                categoria,
+                solicitud.Aforo,
+                tipoAprobacion,
+                modalidad,
+                elemento),
             cancellationToken);
 
         return resultado is { Exitoso: true, Valor: { } detalle }
             ? CreatedAtAction(nameof(Obtener), new { id = detalle.Id }, detalle)
-            : CatalogoProblemas.DesdeResultado(resultado, HttpContext);
+            : CatalogoProblemas.DesdeResultado(
+                resultado,
+                HttpContext,
+                ProblemasSolicitud.SlugConflicto(resultado.Mensaje));
     }
 
     /// <summary>Actualiza los datos del área conservando su código QR.</summary>
@@ -154,6 +174,16 @@ public sealed class EspaciosController : ControllerBase
             return EnumInvalido("estado", "El estado del área no es válido.");
         }
 
+        if (!ParseoContratos.TryParseEnum<TipoModalidadPrestamo>(solicitud.TipoModalidadPrestamo, out var modalidad))
+        {
+            return EnumInvalido("tipoModalidadPrestamo", "La modalidad de préstamo del área no es válida.");
+        }
+
+        if (!ParseoContratos.TryParseEnum<TipoElementoPrestamo>(solicitud.TipoElementoPrestamo, out var elemento))
+        {
+            return EnumInvalido("tipoElementoPrestamo", "El elemento de préstamo del área no es válido.");
+        }
+
         var resultado = await _actualizar.HandleAsync(
             id,
             new ComandoActualizarEspacio(
@@ -163,12 +193,17 @@ public sealed class EspaciosController : ControllerBase
                 solicitud.Aforo,
                 tipoAprobacion,
                 estado,
-                solicitud.RowVersion),
+                solicitud.RowVersion,
+                modalidad,
+                elemento),
             cancellationToken);
 
         return resultado.Exitoso
             ? Ok(resultado.Valor)
-            : CatalogoProblemas.DesdeResultado(resultado, HttpContext);
+            : CatalogoProblemas.DesdeResultado(
+                resultado,
+                HttpContext,
+                ProblemasSolicitud.SlugConflicto(resultado.Mensaje));
     }
 
     /// <summary>Da de baja lógica un área conservando su código QR.</summary>

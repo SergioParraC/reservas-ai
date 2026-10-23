@@ -4,15 +4,22 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { leerProblema } from '../../../../core/interceptors/problem-details.interceptor';
+import { slugProblema } from '../../../../core/errores/mensajes-problema';
 import { PlantillaQrPanel } from '../../components/plantilla-qr-panel';
 import {
   AFORO_MAXIMO,
   CATEGORIAS,
   CategoriaEspacio,
+  combinacionValida,
+  elementosDe,
   ESTADOS,
   EstadoUnidad,
+  etiquetaElemento as etiquetaElementoPrestamo,
+  MODALIDADES,
   TIPOS_APROBACION,
-  TipoAprobacion
+  TipoAprobacion,
+  TipoElementoPrestamo,
+  TipoModalidadPrestamo
 } from '../../models/espacio.models';
 import { EspaciosApi } from '../../services/espacios.api';
 
@@ -32,6 +39,7 @@ export class EspacioFormPage implements OnInit {
   readonly categorias = CATEGORIAS;
   readonly tiposAprobacion = TIPOS_APROBACION;
   readonly estados = ESTADOS;
+  readonly modalidades = MODALIDADES;
   readonly aforoMaximo = AFORO_MAXIMO;
 
   readonly areaId = signal<string | null>(this.ruta.snapshot.paramMap.get('id'));
@@ -47,6 +55,9 @@ export class EspacioFormPage implements OnInit {
   readonly conflicto = signal<string | null>(null);
   readonly erroresCampo = signal<Record<string, string[]>>({});
   readonly fotografiaUrl = signal<string | null>(null);
+  readonly elementosDisponibles = signal<readonly TipoElementoPrestamo[]>(
+    elementosDe(TipoModalidadPrestamo.AreaCompleta)
+  );
   private readonly rowVersion = signal<string | null>(null);
 
   readonly formulario = this.formularioReactivo.group({
@@ -55,11 +66,17 @@ export class EspacioFormPage implements OnInit {
     categoria: [CategoriaEspacio.Laboratorio, [Validators.required]],
     aforo: [10, [Validators.required, Validators.min(1), Validators.max(AFORO_MAXIMO)]],
     tipoAprobacion: [TipoAprobacion.Docente, [Validators.required]],
+    tipoModalidadPrestamo: [TipoModalidadPrestamo.AreaCompleta, [Validators.required]],
+    tipoElementoPrestamo: [TipoElementoPrestamo.LaboratorioEspecializado, [Validators.required]],
     estado: [EstadoUnidad.Activo, [Validators.required]]
   });
 
   /** Carga los datos del área cuando la ruta es de edición. */
   ngOnInit(): void {
+    this.formulario.controls.tipoModalidadPrestamo.valueChanges.subscribe((modalidad) => {
+      this.ajustarElementos(modalidad);
+    });
+
     const id = this.areaId();
 
     if (!id) {
@@ -79,8 +96,11 @@ export class EspacioFormPage implements OnInit {
           categoria: area.categoria,
           aforo: area.aforo,
           tipoAprobacion: area.tipoAprobacion,
+          tipoModalidadPrestamo: area.tipoModalidadPrestamo,
+          tipoElementoPrestamo: area.tipoElementoPrestamo,
           estado: area.estado
         });
+        this.elementosDisponibles.set(elementosDe(area.tipoModalidadPrestamo));
       },
       error: () => {
         this.cargando.set(false);
@@ -91,18 +111,26 @@ export class EspacioFormPage implements OnInit {
 
   /** Crea o actualiza el área con los datos del formulario. */
   guardar(): void {
-    if (this.formulario.invalid) {
+    const valores = this.formulario.getRawValue();
+
+    if (this.formulario.invalid || this.combinacionInvalida()) {
       this.formulario.markAllAsTouched();
+      this.conflicto.set(
+        this.combinacionInvalida()
+          ? 'La combinación de modalidad y elemento de préstamo no es válida para el área.'
+          : null
+      );
       return;
     }
 
-    const valores = this.formulario.getRawValue();
     const base = {
       nombre: valores.nombre,
       ubicacion: valores.ubicacion,
       categoria: valores.categoria,
       aforo: valores.aforo,
-      tipoAprobacion: valores.tipoAprobacion
+      tipoAprobacion: valores.tipoAprobacion,
+      tipoModalidadPrestamo: valores.tipoModalidadPrestamo,
+      tipoElementoPrestamo: valores.tipoElementoPrestamo
     };
 
     this.guardando.set(true);
@@ -161,6 +189,28 @@ export class EspacioFormPage implements OnInit {
     return control.touched && control.invalid;
   }
 
+  /** Indica si la modalidad y el elemento seleccionados son incoherentes. */
+  combinacionInvalida(): boolean {
+    const valores = this.formulario.getRawValue();
+    return !combinacionValida(valores.tipoModalidadPrestamo, valores.tipoElementoPrestamo);
+  }
+
+  /** Etiqueta legible del elemento de préstamo. */
+  etiquetaElemento(valor: TipoElementoPrestamo): string {
+    return etiquetaElementoPrestamo(valor);
+  }
+
+  private ajustarElementos(modalidad: TipoModalidadPrestamo): void {
+    const permitidos = elementosDe(modalidad);
+    this.elementosDisponibles.set(permitidos);
+
+    const actual = this.formulario.controls.tipoElementoPrestamo.value;
+
+    if (!permitidos.includes(actual) && permitidos.length > 0) {
+      this.formulario.controls.tipoElementoPrestamo.setValue(permitidos[0]);
+    }
+  }
+
   /** Sube la fotografía del área en edición. */
   subirFoto(evento: Event): void {
     const entrada = evento.target as HTMLInputElement;
@@ -199,9 +249,14 @@ export class EspacioFormPage implements OnInit {
     }
 
     const problema = leerProblema(error);
+    const slug = slugProblema(error);
 
     if (error.status === 409) {
-      this.conflicto.set(problema?.detail ?? 'El área entra en conflicto con su estado actual.');
+      this.conflicto.set(
+        slug === 'modalidad-con-ocupacion'
+          ? 'No es posible cambiar la modalidad: el área tiene ocupación futura (series o reservas vigentes).'
+          : problema?.detail ?? 'El área entra en conflicto con su estado actual.'
+      );
       return;
     }
 

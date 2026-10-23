@@ -12,7 +12,9 @@ import {
   FiltrosCatalogo,
   FiltrosEspaciosAdmin,
   nombreCategoria,
+  nombreElemento,
   nombreEstado,
+  nombreModalidad,
   nombreTipoAprobacion,
   PaginaResultado,
   PlantillaQrDescarga,
@@ -174,7 +176,9 @@ export class EspaciosApi {
       ubicacion: solicitud.ubicacion,
       categoria: nombreCategoria(solicitud.categoria),
       aforo: solicitud.aforo,
-      tipoAprobacion: nombreTipoAprobacion(solicitud.tipoAprobacion)
+      tipoAprobacion: nombreTipoAprobacion(solicitud.tipoAprobacion),
+      tipoModalidadPrestamo: nombreModalidad(solicitud.tipoModalidadPrestamo),
+      tipoElementoPrestamo: nombreElemento(solicitud.tipoElementoPrestamo)
     };
   }
 }

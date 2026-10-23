@@ -99,7 +99,11 @@ public sealed class EspaciosHandlersTests
         _repositorio.Setup(repositorio => repositorio.ObtenerAsync(espacio.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(espacio);
 
-        var resultado = await new ActualizarEspacioHandler(_repositorio.Object, _opciones, _reloj.Object)
+        var resultado = await new ActualizarEspacioHandler(
+                _repositorio.Object,
+                Mock.Of<IConsultaOcupacionEspacio>(),
+                _opciones,
+                _reloj.Object)
             .HandleAsync(espacio.Id, new ComandoActualizarEspacio(
                 espacio.Nombre,
                 espacio.Ubicacion,

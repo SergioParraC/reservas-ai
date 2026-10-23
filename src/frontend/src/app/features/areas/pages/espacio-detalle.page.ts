@@ -3,9 +3,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import {
   etiquetaCategoria,
+  etiquetaElemento,
+  etiquetaModalidad,
   etiquetaTipoAprobacion,
   EspacioPublico,
-  TipoAprobacion
+  TipoAprobacion,
+  TipoModalidadPrestamo
 } from '../models/espacio.models';
 import { EspaciosApi } from '../services/espacios.api';
 
@@ -35,9 +38,19 @@ import { EspaciosApi } from '../services/espacios.api';
             <dd>{{ datos.aforo }} personas</dd>
             <dt>Aprobación</dt>
             <dd>{{ aprobacion() }}</dd>
+            <dt>Modalidad</dt>
+            <dd>{{ modalidad() }}</dd>
+            <dt>Elemento</dt>
+            <dd>{{ elemento() }}</dd>
             <dt>Puestos activos</dt>
             <dd>{{ datos.puestosActivos }}</dd>
           </dl>
+
+          @if (admiteSolicitud()) {
+            <p class="solicitud">
+              <a [routerLink]="['/solicitudes/radicar', datos.id]">Radicar solicitud con pre-informe →</a>
+            </p>
+          }
 
           @if (datos.puestos.length > 0) {
             <section class="puestos">
@@ -65,11 +78,10 @@ import { EspaciosApi } from '../services/espacios.api';
             </section>
           } @else if (admitePrestamoDirecto()) {
             <p class="nota">Esta área aún no tiene puestos activos para préstamo directo.</p>
-          } @else {
+          } @else if (!admiteSolicitud()) {
             <p class="nota">
-              Esta área no tiene puestos de cómputo y su reserva es del área completa, sujeta al flujo
-              de aprobación {{ aprobacion().toLowerCase() }} (solicitud con justificación y revisión).
-              Ese flujo pertenece a la siguiente etapa y todavía no está disponible.
+              Esta área no tiene puestos de cómputo y su modalidad no admite solicitudes de área
+              completa.
             </p>
           }
         </div>
@@ -215,8 +227,41 @@ export class EspacioDetallePage implements OnInit {
     return etiquetaTipoAprobacion(this.area()!.tipoAprobacion);
   }
 
+  /** Etiqueta de la modalidad de préstamo. */
+  modalidad(): string {
+    return etiquetaModalidad(this.area()!.tipoModalidadPrestamo);
+  }
+
+  /** Etiqueta del elemento de préstamo. */
+  elemento(): string {
+    return etiquetaElemento(this.area()!.tipoElementoPrestamo);
+  }
+
   /** Indica si el área admite reserva autoconfirmada de sus puestos. */
   admitePrestamoDirecto(): boolean {
-    return this.area()?.tipoAprobacion === TipoAprobacion.Automatica;
+    const area = this.area();
+
+    if (!area) {
+      return false;
+    }
+
+    return (
+      area.tipoAprobacion === TipoAprobacion.Automatica &&
+      area.tipoModalidadPrestamo !== TipoModalidadPrestamo.AreaCompleta
+    );
+  }
+
+  /** Indica si el área admite la radicación de una solicitud con pre-informe. */
+  admiteSolicitud(): boolean {
+    const area = this.area();
+
+    if (!area) {
+      return false;
+    }
+
+    return (
+      area.tipoAprobacion !== TipoAprobacion.Automatica &&
+      area.tipoModalidadPrestamo === TipoModalidadPrestamo.AreaCompleta
+    );
   }
 }

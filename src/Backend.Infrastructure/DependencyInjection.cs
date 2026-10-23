@@ -90,10 +90,30 @@ public static class DependencyInjection
         opcionesReservas.Validar();
         services.AddSingleton(opcionesReservas);
 
+        var opcionesSolicitudes = configuration.GetSection(OpcionesSolicitudes.Seccion).Get<OpcionesSolicitudes>() ?? new OpcionesSolicitudes();
+        opcionesSolicitudes.Validar();
+        services.AddSingleton(opcionesSolicitudes);
+
+        var opcionesSemestre = configuration.GetSection(OpcionesSemestre.Seccion).Get<OpcionesSemestre>() ?? new OpcionesSemestre();
+        opcionesSemestre.Validar();
+        services.AddSingleton(opcionesSemestre);
+
+        var opcionesCalendario = configuration.GetSection(OpcionesCalendario.Seccion).Get<OpcionesCalendario>() ?? new OpcionesCalendario();
+        opcionesCalendario.Validar();
+        services.AddSingleton(opcionesCalendario);
+
+        var opcionesSmtp = configuration.GetSection(OpcionesSmtp.Seccion).Get<OpcionesSmtp>() ?? new OpcionesSmtp();
+        opcionesSmtp.Validar();
+        services.AddSingleton(opcionesSmtp);
+
+        services.AddMemoryCache();
+
         services.AddSingleton<IRelojSistema, RelojSistema>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddSingleton<IQrGenerator, QRCoderService>();
         services.AddSingleton<IAlmacenArchivos, LocalFileStorageService>();
+        services.AddSingleton<IAlmacenDocumentos, FileStorageService>();
+        services.AddSingleton<IEmailService, MailKitEmailService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IEntraIdProfileResolver, EntraIdProfileResolver>();
         services.AddScoped<IInicializadorIdentity, InicializadorIdentity>();
@@ -103,6 +123,15 @@ public static class DependencyInjection
         services.AddScoped<IConsultaReservas, ConsultaReservas>();
         services.AddScoped<IConsultaUsuarios, ConsultaUsuarios>();
         services.AddScoped<IValidadorTokenEntra, ValidadorTokenEntra>();
+        services.AddScoped<IPeriodosAcademicosRepository, PeriodosAcademicosRepository>();
+        services.AddScoped<IFranjasNoOperativasRepository, FranjasNoOperativasRepository>();
+        services.AddScoped<IConsultaCalendario, ConsultaCalendario>();
+        services.AddScoped<IReservasRecurrentesRepository, ReservasRecurrentesRepository>();
+        services.AddScoped<IConsultaOcupacionEspacio, ConsultaOcupacionEspacio>();
+        services.AddScoped<ISolicitudesRepository, SolicitudesRepository>();
+        services.AddScoped<IConsultaSolicitudes, ConsultaSolicitudes>();
+        services.AddScoped<IColaCorreos, ColaCorreos>();
+        services.AddHostedService<DespachadorCorreos>();
 
         return services;
     }

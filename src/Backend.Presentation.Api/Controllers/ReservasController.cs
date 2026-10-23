@@ -59,7 +59,7 @@ public sealed class ReservasController : ControllerBase
         return CatalogoProblemas.DesdeResultado(
             resultado,
             HttpContext,
-            ProblemasReserva.SlugConflicto(resultado.Mensaje));
+            ProblemasSolicitud.SlugConflicto(resultado.Mensaje));
     }
 
     /// <summary>Lista las reservas del titular autenticado, ordenadas por inicio ascendente.</summary>
@@ -125,7 +125,7 @@ public sealed class ReservasController : ControllerBase
         return CatalogoProblemas.DesdeResultado(
             resultado,
             HttpContext,
-            ProblemasReserva.SlugConflicto(resultado.Mensaje));
+            ProblemasSolicitud.SlugConflicto(resultado.Mensaje));
     }
 
     private static bool TryParseOpcional(string? texto, out DateTimeOffset? valor)

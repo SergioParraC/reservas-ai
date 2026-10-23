@@ -1,0 +1,106 @@
+<header class="encabezado">
+  <h1>Bandeja de aprobaciones</h1>
+  <p class="ayuda">
+    Solo se muestran las solicitudes de su competencia. El solicitante nunca puede decidir su propia
+    solicitud.
+  </p>
+</header>
+
+<form class="filtros" [formGroup]="filtros" (ngSubmit)="aplicar()">
+  <label>
+    Estado
+    <select formControlName="estado">
+      <option value="">Todos</option>
+      @for (estado of estados; track estado.valor) {
+        <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Área
+    <select formControlName="espacioId">
+      <option value="">Todas</option>
+      @for (area of areas(); track area.id) {
+        <option [value]="area.id">{{ area.nombre }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Radicadas desde
+    <input type="date" formControlName="desde" />
+  </label>
+
+  <label>
+    Radicadas hasta
+    <input type="date" formControlName="hasta" />
+  </label>
+
+  <button type="submit">Aplicar filtros</button>
+</form>
+
+@if (tienda.error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+}
+
+@if (tienda.aviso(); as mensaje) {
+  <p class="aviso" role="status">{{ mensaje }}</p>
+}
+
+@if (tienda.cargando()) {
+  <p class="estado" role="status">Cargando solicitudes…</p>
+} @else if (tienda.pagina(); as pagina) {
+  @if (pagina.elementos.length === 0) {
+    <p class="vacio" role="status">No hay solicitudes que coincidan con los filtros.</p>
+  } @else {
+    <p class="total">{{ pagina.total }} solicitud(es)</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Solicitante</th>
+          <th>Área</th>
+          <th>Franja</th>
+          <th>Estado</th>
+          <th>Radicada</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (solicitud of pagina.elementos; track solicitud.id) {
+          <tr>
+            <td>
+              <strong>{{ solicitud.solicitanteNombre }}</strong>
+              <span class="correo">{{ solicitud.solicitanteCorreo }}</span>
+            </td>
+            <td>{{ solicitud.espacioNombre }}</td>
+            <td>
+              {{ solicitud.inicio | date: 'dd/MM/yyyy HH:mm' }} —
+              {{ solicitud.fin | date: 'HH:mm' }}
+            </td>
+            <td><span class="chip">{{ etiqueta(solicitud.estado) }}</span></td>
+            <td>{{ solicitud.radicadaEn | date: 'dd/MM/yyyy' }}</td>
+            <td class="acciones">
+              <a [routerLink]="['/bandeja-aprobaciones', solicitud.id]">Revisar</a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <nav class="paginacion" aria-label="Paginación de la bandeja">
+      <button type="button" (click)="ir(pagina.pagina - 1)" [disabled]="pagina.pagina <= 1">
+        Anterior
+      </button>
+      <span>Página {{ pagina.pagina }} de {{ tienda.totalPaginas() }}</span>
+      <button
+        type="button"
+        (click)="ir(pagina.pagina + 1)"
+        [disabled]="pagina.pagina >= tienda.totalPaginas()"
+      >
+        Siguiente
+      </button>
+    </nav>
+  }
+}

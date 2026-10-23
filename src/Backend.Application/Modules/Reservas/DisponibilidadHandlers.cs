@@ -9,21 +9,25 @@ namespace Backend.Application.Modules.Reservas;
 
 /// <summary>
 /// Consulta la disponibilidad de un puesto para una fecha y jornada, sin exponer la agenda
-/// de otros usuarios: solo devuelve franjas con su motivo de bloqueo.
+/// de otros usuarios: solo devuelve franjas con su motivo de bloqueo. El calendario
+/// institucional se evalúa antes que la ocupación del puesto.
 /// </summary>
 public sealed class ConsultarDisponibilidadHandler
 {
     private readonly IConsultaReservas _consulta;
+    private readonly IConsultaCalendario _calendario;
     private readonly OpcionesReservas _opciones;
     private readonly IRelojSistema _reloj;
 
     /// <summary>Inicializa el caso de uso con sus puertos y la política institucional.</summary>
     public ConsultarDisponibilidadHandler(
         IConsultaReservas consulta,
+        IConsultaCalendario calendario,
         OpcionesReservas opciones,
         IRelojSistema reloj)
     {
         _consulta = consulta ?? throw new ArgumentNullException(nameof(consulta));
+        _calendario = calendario ?? throw new ArgumentNullException(nameof(calendario));
         _opciones = opciones ?? throw new ArgumentNullException(nameof(opciones));
         _reloj = reloj ?? throw new ArgumentNullException(nameof(reloj));
     }
@@ -68,6 +72,12 @@ public sealed class ConsultarDisponibilidadHandler
             .Select(intervalo => FranjaHoraria.Desde(intervalo.Inicio, intervalo.Fin))
             .ToArray();
 
+        var calendario = await _calendario.ObtenerCalendarioAsync(
+            filtro.Fecha,
+            filtro.Fecha,
+            zona,
+            cancellationToken);
+
         var franjas = MotorDisponibilidad
             .GenerarFranjas(
                 filtro.Fecha,
@@ -77,7 +87,8 @@ public sealed class ConsultarDisponibilidadHandler
                 ahora,
                 filtro.DuracionMinutos,
                 filtro.Desde,
-                filtro.Hasta)
+                filtro.Hasta,
+                calendario)
             .Select(candidata => new FranjaDisponible(
                 candidata.Franja.Inicio,
                 candidata.Franja.Fin,
@@ -99,6 +110,8 @@ public sealed class ConsultarDisponibilidadHandler
         MotivoNoDisponible.Ocupada => nameof(MotivoNoDisponible.Ocupada),
         MotivoNoDisponible.FueraDeAntelacion => nameof(MotivoNoDisponible.FueraDeAntelacion),
         MotivoNoDisponible.FueraDeHorizonte => nameof(MotivoNoDisponible.FueraDeHorizonte),
+        MotivoNoDisponible.FueraDeOperacion => nameof(MotivoNoDisponible.FueraDeOperacion),
+        MotivoNoDisponible.FueraDePeriodoAcademico => nameof(MotivoNoDisponible.FueraDePeriodoAcademico),
         _ => null
     };
 }

@@ -47,6 +47,22 @@ services:
       Almacen__RutaBase: "/var/lib/reservas"
       Identidad__PermitirAutorregistro: "true"
       Identidad__DominioCorreoInstitucional: "${DOMINIO_CORREO_INSTITUCIONAL:-uninpahu.edu.co}"
+      Solicitudes__TamanoMaximoPdfBytes: "5242880"
+      Solicitudes__MaxSolicitudesActivasPorUsuario: "3"
+      Solicitudes__LongitudMinimaMotivoRechazo: "10"
+      Solicitudes__AntelacionMinimaMinutos: "30"
+      Semestre__SemanasMaximasPorSerie: "20"
+      Semestre__AntelacionMinimaDias: "3"
+      Calendario__MinutosCacheCalendario: "1"
+      Smtp__Host: "mailhog"
+      Smtp__Puerto: "1025"
+      Smtp__UsarSsl: "false"
+      Smtp__Usuario: ""
+      Smtp__Contrasena: ""
+      Smtp__RemitenteCorreo: "reservas@uninpahu.edu.co"
+      Smtp__RemitenteNombre: "Reservas de Espacios"
+      Smtp__Habilitado: "true"
+      Smtp__IntervaloDespachoSegundos: "15"
     ports:
       - "8080:8080"
     volumes:
@@ -54,6 +70,15 @@ services:
     depends_on:
       mssql:
         condition: service_healthy
+      mailhog:
+        condition: service_started
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: reservas-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   mssql-datos:

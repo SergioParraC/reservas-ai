@@ -191,7 +191,9 @@ public sealed class CatalogoAreasTests
             ubicacion,
             categoria,
             aforo,
-            tipoAprobacion = "Docente"
+            tipoAprobacion = "Docente",
+            tipoModalidadPrestamo = ModalidadDe(categoria),
+            tipoElementoPrestamo = ElementoDe(categoria)
         });
 
         Assert.Equal(HttpStatusCode.Created, respuesta.StatusCode);
@@ -201,6 +203,21 @@ public sealed class CatalogoAreasTests
 
         return area;
     }
+
+    private static string ModalidadDe(string categoria) => categoria switch
+    {
+        "SalaComputo" => "PuestoIndividual",
+        "Deportivo" => "SubZonaCompartida",
+        _ => "AreaCompleta"
+    };
+
+    private static string ElementoDe(string categoria) => categoria switch
+    {
+        "SalaComputo" => "EquipoComputo",
+        "Auditorio" => "Auditorio",
+        "Deportivo" => "ZonaDescansoJuegos",
+        _ => "LaboratorioEspecializado"
+    };
 
     private static byte[] ContenidoPng() =>
     [

@@ -35,6 +35,8 @@ public sealed class Espacio
         CategoriaEspacio categoria,
         int aforo,
         TipoAprobacion tipoAprobacion,
+        TipoModalidadPrestamo tipoModalidadPrestamo,
+        TipoElementoPrestamo tipoElementoPrestamo,
         CodigoQR codigoQr,
         DateTimeOffset creadoEn)
     {
@@ -44,6 +46,8 @@ public sealed class Espacio
         Categoria = categoria;
         Aforo = aforo;
         TipoAprobacion = tipoAprobacion;
+        TipoModalidadPrestamo = tipoModalidadPrestamo;
+        TipoElementoPrestamo = tipoElementoPrestamo;
         CodigoQR = codigoQr;
         Estado = EstadoUnidad.Activo;
         CreadoEn = creadoEn;
@@ -67,6 +71,18 @@ public sealed class Espacio
 
     /// <summary>Responsable de aprobar las reservas del área.</summary>
     public TipoAprobacion TipoAprobacion { get; private set; }
+
+    /// <summary>Forma en que se presta el área; determina el tipo de reserva admitido.</summary>
+    public TipoModalidadPrestamo TipoModalidadPrestamo { get; private set; }
+
+    /// <summary>Elemento físico que se presta en el área.</summary>
+    public TipoElementoPrestamo TipoElementoPrestamo { get; private set; }
+
+    /// <summary>Indica si el área admite el préstamo directo de sus puestos.</summary>
+    public bool AdmitePrestamoDirecto => TipoModalidadPrestamo != TipoModalidadPrestamo.AreaCompleta;
+
+    /// <summary>Indica si el área admite series semestrales y solicitudes de área completa.</summary>
+    public bool AdmiteReservaDeArea => TipoModalidadPrestamo == TipoModalidadPrestamo.AreaCompleta;
 
     /// <summary>Estado del área; la baja es lógica.</summary>
     public EstadoUnidad Estado { get; private set; }
@@ -104,13 +120,16 @@ public sealed class Espacio
         int aforoMaximo,
         TipoAprobacion tipoAprobacion,
         DateTimeOffset creadoEn,
-        CodigoQR? codigoQr = null)
+        CodigoQR? codigoQr = null,
+        TipoModalidadPrestamo tipoModalidadPrestamo = TipoModalidadPrestamo.AreaCompleta,
+        TipoElementoPrestamo tipoElementoPrestamo = TipoElementoPrestamo.LaboratorioEspecializado)
     {
         var nombreNormalizado = NormalizarNombre(nombre);
         var ubicacionNormalizada = NormalizarUbicacion(ubicacion);
 
         ValidarCategoria(categoria);
         ValidarTipoAprobacion(tipoAprobacion);
+        ValidarModalidad(tipoModalidadPrestamo, tipoElementoPrestamo);
         ValidarAforo(aforo, aforoMaximo);
 
         return new Espacio(
@@ -120,11 +139,13 @@ public sealed class Espacio
             categoria,
             aforo,
             tipoAprobacion,
+            tipoModalidadPrestamo,
+            tipoElementoPrestamo,
             codigoQr ?? CodigoQR.Generar(),
             creadoEn);
     }
 
-    /// <summary>Actualiza los datos descriptivos, el aforo y el estado del área.</summary>
+    /// <summary>Actualiza los datos descriptivos, el aforo, la modalidad y el estado del área.</summary>
     public void Actualizar(
         string nombre,
         string ubicacion,
@@ -133,7 +154,9 @@ public sealed class Espacio
         EstadoUnidad estado,
         int aforo,
         int aforoMaximo,
-        DateTimeOffset momento)
+        DateTimeOffset momento,
+        TipoModalidadPrestamo? tipoModalidadPrestamo = null,
+        TipoElementoPrestamo? tipoElementoPrestamo = null)
     {
         Nombre = NormalizarNombre(nombre);
         Ubicacion = NormalizarUbicacion(ubicacion);
@@ -144,12 +167,41 @@ public sealed class Espacio
         ValidarAforo(aforo, aforoMaximo);
         ValidarAforoContraPuestos(aforo);
 
+        var modalidad = tipoModalidadPrestamo ?? TipoModalidadPrestamo;
+        var elemento = tipoElementoPrestamo ?? TipoElementoPrestamo;
+
+        ValidarModalidad(modalidad, elemento);
+
         Categoria = categoria;
         TipoAprobacion = tipoAprobacion;
         Estado = estado;
         Aforo = aforo;
+        TipoModalidadPrestamo = modalidad;
+        TipoElementoPrestamo = elemento;
         ActualizadoEn = momento;
     }
+
+    /// <summary>
+    /// Indica si la combinación de modalidad y elemento es coherente según la matriz institucional:
+    /// el área completa admite laboratorio, auditorio o zona de descanso; el puesto individual solo
+    /// equipos de cómputo; la sub-zona comparte cómputo o zona de descanso.
+    /// </summary>
+    public static bool EsCombinacionValida(TipoModalidadPrestamo modalidad, TipoElementoPrestamo elemento) => modalidad switch
+    {
+        TipoModalidadPrestamo.AreaCompleta => elemento
+            is TipoElementoPrestamo.LaboratorioEspecializado
+            or TipoElementoPrestamo.Auditorio
+            or TipoElementoPrestamo.ZonaDescansoJuegos,
+        TipoModalidadPrestamo.PuestoIndividual => elemento == TipoElementoPrestamo.EquipoComputo,
+        TipoModalidadPrestamo.SubZonaCompartida => elemento
+            is TipoElementoPrestamo.EquipoComputo
+            or TipoElementoPrestamo.ZonaDescansoJuegos,
+        _ => false
+    };
+
+    /// <summary>Indica si la modalidad cambia respecto del valor persistido.</summary>
+    public bool CambiaModalidad(TipoModalidadPrestamo modalidad, TipoElementoPrestamo elemento) =>
+        TipoModalidadPrestamo != modalidad || TipoElementoPrestamo != elemento;
 
     /// <summary>Cambia el aforo respetando el máximo institucional y los puestos activos.</summary>
     public void CambiarAforo(int aforo, int aforoMaximo, DateTimeOffset momento)
@@ -371,6 +423,24 @@ public sealed class Espacio
         if (!Enum.IsDefined(tipoAprobacion))
         {
             throw new DomainException(MensajesEspacio.TipoAprobacionInvalido);
+        }
+    }
+
+    private static void ValidarModalidad(TipoModalidadPrestamo modalidad, TipoElementoPrestamo elemento)
+    {
+        if (!Enum.IsDefined(modalidad))
+        {
+            throw new DomainException(MensajesEspacio.ModalidadInvalida);
+        }
+
+        if (!Enum.IsDefined(elemento))
+        {
+            throw new DomainException(MensajesEspacio.ElementoInvalido);
+        }
+
+        if (!EsCombinacionValida(modalidad, elemento))
+        {
+            throw new DomainException(MensajesEspacio.CombinacionPrestamoInvalida);
         }
     }
 

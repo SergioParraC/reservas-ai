@@ -1,14 +1,37 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
 
-/** Endpoint administrativo de verificación protegido por rol. */
+/** Panel de administración con los accesos a cada módulo y la verificación protegida por rol. */
 @Component({
   selector: 'app-administracion',
+  imports: [RouterLink],
   template: `
-    <h1>Verificación administrativa</h1>
-    <p class="detalle">Este endpoint solo responde a identidades con el rol <strong>Administrativo</strong>.</p>
+    <h1>Administración</h1>
+    <p class="detalle">
+      Módulos disponibles para identidades con el rol <strong>Administrativo</strong>.
+    </p>
+
+    <nav class="modulos">
+      <a routerLink="/administracion/configuracion">
+        <strong>Calendario institucional</strong>
+        <span>Periodo académico vigente y franjas no operativas.</span>
+      </a>
+      <a routerLink="/administracion/espacios">
+        <strong>Espacios</strong>
+        <span>Áreas, puestos, modalidad de préstamo, fotografías y QR.</span>
+      </a>
+      <a routerLink="/administracion/usuarios">
+        <strong>Usuarios</strong>
+        <span>Cuentas, roles y vinculación institucional.</span>
+      </a>
+      <a routerLink="/bandeja-aprobaciones">
+        <strong>Bandeja de aprobaciones</strong>
+        <span>Solicitudes con pre-informe de cualquier área.</span>
+      </a>
+    </nav>
 
     @if (mensaje(); as texto) {
       <p class="resultado" role="status">{{ texto }}</p>
@@ -21,6 +44,38 @@ import { environment } from '../../../environments/environment';
   styles: `
     .detalle {
       color: #4b5563;
+    }
+
+    .modulos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .modulos a {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 1rem;
+      border: 1px solid var(--color-borde);
+      border-radius: 0.5rem;
+      background: #fff;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .modulos a:hover {
+      border-color: var(--color-primario);
+    }
+
+    .modulos strong {
+      color: var(--color-primario);
+    }
+
+    .modulos span {
+      font-size: 0.85rem;
+      color: #6b7280;
     }
 
     .resultado {

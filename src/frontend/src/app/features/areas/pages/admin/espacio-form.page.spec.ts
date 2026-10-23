@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { throwError } from 'rxjs';
 
-import { CategoriaEspacio, EstadoUnidad, TipoAprobacion } from '../../models/espacio.models';
+import { CategoriaEspacio, EstadoUnidad, TipoAprobacion, TipoElementoPrestamo, TipoModalidadPrestamo } from '../../models/espacio.models';
 import { EspaciosApi } from '../../services/espacios.api';
 import { EspacioFormPage } from './espacio-form.page';
 
@@ -34,6 +34,7 @@ describe('EspacioFormPage', () => {
 
   function crearPagina(): EspacioFormPage {
     const fixture = TestBed.createComponent(EspacioFormPage);
+    fixture.detectChanges();
     return fixture.componentInstance;
   }
 
@@ -44,6 +45,8 @@ describe('EspacioFormPage', () => {
       categoria: CategoriaEspacio.Laboratorio,
       aforo,
       tipoAprobacion: TipoAprobacion.Docente,
+      tipoModalidadPrestamo: TipoModalidadPrestamo.AreaCompleta,
+      tipoElementoPrestamo: TipoElementoPrestamo.LaboratorioEspecializado,
       estado: EstadoUnidad.Activo
     };
   }
@@ -100,5 +103,50 @@ describe('EspacioFormPage', () => {
     pagina.guardar();
 
     expect(pagina.errorDe('aforo')).toContain('máximo institucional');
+  });
+
+  it('muestra el mensaje de modalidad con ocupación futura', () => {
+    api.crear.and.returnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            error: {
+              type: 'https://api.reservas-espacios.edu/problems/modalidad-con-ocupacion',
+              detail: 'No es posible cambiar la modalidad de préstamo: el área tiene ocupación futura.'
+            }
+          })
+      )
+    );
+
+    const pagina = crearPagina();
+    pagina.formulario.setValue(datosValidos(10));
+    pagina.guardar();
+
+    expect(pagina.conflicto()).toContain('ocupación');
+  });
+
+  it('bloquea una combinación incoherente de modalidad y elemento', () => {
+    const pagina = crearPagina();
+    pagina.formulario.setValue({
+      ...datosValidos(10),
+      tipoModalidadPrestamo: TipoModalidadPrestamo.PuestoIndividual,
+      tipoElementoPrestamo: TipoElementoPrestamo.Auditorio
+    });
+
+    pagina.guardar();
+
+    expect(api.crear).not.toHaveBeenCalled();
+    expect(pagina.combinacionInvalida()).toBeTrue();
+    expect(pagina.conflicto()).toContain('combinación');
+  });
+
+  it('ajusta los elementos disponibles al cambiar de modalidad', () => {
+    const pagina = crearPagina();
+
+    pagina.formulario.controls.tipoModalidadPrestamo.setValue(TipoModalidadPrestamo.PuestoIndividual);
+
+    expect(pagina.elementosDisponibles()).toEqual([TipoElementoPrestamo.EquipoComputo]);
+    expect(pagina.formulario.controls.tipoElementoPrestamo.value).toBe(TipoElementoPrestamo.EquipoComputo);
   });
 });

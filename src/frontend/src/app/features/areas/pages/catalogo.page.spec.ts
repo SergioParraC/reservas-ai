@@ -7,7 +7,9 @@ import {
   CategoriaEspacio,
   EspacioCatalogo,
   FiltrosCatalogo,
-  TipoAprobacion
+  TipoAprobacion,
+  TipoElementoPrestamo,
+  TipoModalidadPrestamo
 } from '../models/espacio.models';
 import { CatalogoPage } from './catalogo.page';
 
@@ -18,7 +20,9 @@ const AREA: EspacioCatalogo = {
   categoria: CategoriaEspacio.Laboratorio,
   aforo: 25,
   tipoAprobacion: TipoAprobacion.Docente,
-  fotografiaUrl: null
+  fotografiaUrl: null,
+  tipoModalidadPrestamo: TipoModalidadPrestamo.AreaCompleta,
+  tipoElementoPrestamo: TipoElementoPrestamo.LaboratorioEspecializado
 };
 
 function crearTienda(elementos: EspacioCatalogo[], total = elementos.length) {

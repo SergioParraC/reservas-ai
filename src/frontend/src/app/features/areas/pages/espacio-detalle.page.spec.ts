@@ -3,7 +3,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of } from 'rxjs';
 
 import { EspacioDetallePage } from './espacio-detalle.page';
-import { EspacioPublico, EstadoUnidad, TipoAprobacion } from '../models/espacio.models';
+import { EspacioPublico, EstadoUnidad, TipoAprobacion, TipoElementoPrestamo, TipoModalidadPrestamo } from '../models/espacio.models';
 import { EspaciosApi } from '../services/espacios.api';
 
 const AREA: EspacioPublico = {
@@ -14,6 +14,8 @@ const AREA: EspacioPublico = {
   aforo: 20,
   tipoAprobacion: TipoAprobacion.Automatica,
   fotografiaUrl: null,
+  tipoModalidadPrestamo: TipoModalidadPrestamo.PuestoIndividual,
+  tipoElementoPrestamo: TipoElementoPrestamo.EquipoComputo,
   puestosActivos: 1,
   puestos: [
     {
@@ -80,7 +82,25 @@ describe('EspacioDetallePage', () => {
     );
   });
 
-  it('explica que la reserva del área completa pertenece a otra etapa', () => {
+  it('ofrece radicar una solicitud de área completa con pre-informe', () => {
+    configurar({
+      ...AREA,
+      tipoAprobacion: TipoAprobacion.Docente,
+      tipoModalidadPrestamo: TipoModalidadPrestamo.AreaCompleta,
+      tipoElementoPrestamo: TipoElementoPrestamo.LaboratorioEspecializado,
+      puestosActivos: 0,
+      puestos: []
+    });
+    const fixture = TestBed.createComponent(EspacioDetallePage);
+    fixture.detectChanges();
+
+    const enlace = fixture.nativeElement.querySelector('.solicitud a') as HTMLAnchorElement | null;
+
+    expect(enlace?.textContent).toContain('Radicar solicitud con pre-informe');
+    expect(enlace?.getAttribute('href')).toContain('/solicitudes/radicar/espacio-1');
+  });
+
+  it('avisa que la modalidad no admite solicitudes de área completa', () => {
     configurar({ ...AREA, tipoAprobacion: TipoAprobacion.Docente, puestosActivos: 0, puestos: [] });
     const fixture = TestBed.createComponent(EspacioDetallePage);
     fixture.detectChanges();
@@ -88,8 +108,7 @@ describe('EspacioDetallePage', () => {
     const texto = fixture.nativeElement.textContent as string;
 
     expect(texto).toContain('no tiene puestos de cómputo');
-    expect(texto).toContain('aprobación docente');
-    expect(texto).toContain('todavía no está disponible');
+    expect(texto).toContain('no admite solicitudes de área completa');
     expect(fixture.nativeElement.querySelectorAll('app-reserva-card, .puestos a').length).toBe(0);
   });
 });

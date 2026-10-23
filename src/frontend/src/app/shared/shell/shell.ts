@@ -18,7 +18,14 @@ import { SesionStore } from '../../core/auth/sesion.store';
         @if (autenticado()) {
           <a routerLink="/inicio">Inicio</a>
           <a routerLink="/mis-reservas">Mis reservas</a>
+          @if (esDocente()) {
+            <a routerLink="/reservas-semestrales/mis-series">Mis series</a>
+          }
+          @if (puedeAprobar()) {
+            <a routerLink="/bandeja-aprobaciones">Bandeja</a>
+          }
           @if (esAdministrativo()) {
+            <a routerLink="/administracion/configuracion">Calendario</a>
             <a routerLink="/administracion/espacios">Espacios</a>
             <a routerLink="/administracion/usuarios">Usuarios</a>
           }
@@ -96,6 +103,8 @@ export class Shell {
   readonly correo = computed(() => this.sesion.perfil()?.correoInstitucional ?? '');
   readonly origen = this.sesion.origen;
   readonly esAdministrativo = computed(() => this.sesion.roles().includes(ROLES.administrativo));
+  readonly esDocente = computed(() => this.sesion.roles().includes(ROLES.docente));
+  readonly puedeAprobar = computed(() => this.esDocente() || this.esAdministrativo());
 
   cerrarSesion(): void {
     this.auth.logout();

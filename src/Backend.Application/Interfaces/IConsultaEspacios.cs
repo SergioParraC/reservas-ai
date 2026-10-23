@@ -20,4 +20,10 @@ public interface IConsultaEspacios
 
     /// <summary>Obtiene el detalle público de un área activa.</summary>
     Task<EspacioPublico?> ObtenerPublicoAsync(Guid espacioId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Obtiene los datos mínimos del área que necesitan las series y las solicitudes:
+    /// estado, competencia de aprobación y modalidad de préstamo.
+    /// </summary>
+    Task<EspacioParaReserva?> ObtenerParaReservaAsync(Guid espacioId, CancellationToken cancellationToken = default);
 }

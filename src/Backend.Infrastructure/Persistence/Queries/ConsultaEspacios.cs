@@ -71,7 +71,9 @@ public sealed class ConsultaEspacios : IConsultaEspacios
                 PuestosActivos = espacio.Puestos.Count(puesto => puesto.Estado == EstadoUnidad.Activo),
                 espacio.CreadoEn,
                 espacio.ActualizadoEn,
-                espacio.RowVersion
+                espacio.RowVersion,
+                espacio.TipoModalidadPrestamo,
+                espacio.TipoElementoPrestamo
             })
             .ToListAsync(cancellationToken);
 
@@ -89,7 +91,9 @@ public sealed class ConsultaEspacios : IConsultaEspacios
                 fila.PuestosActivos,
                 fila.CreadoEn,
                 fila.ActualizadoEn,
-                Convert.ToBase64String(fila.RowVersion)))
+                Convert.ToBase64String(fila.RowVersion),
+                fila.TipoModalidadPrestamo,
+                fila.TipoElementoPrestamo))
             .ToArray();
 
         return new PaginaResultado<EspacioResumen>(elementos, total, filtro.Pagina, filtro.Tamano);
@@ -154,7 +158,9 @@ public sealed class ConsultaEspacios : IConsultaEspacios
                 espacio.Categoria,
                 espacio.Aforo,
                 espacio.TipoAprobacion,
-                espacio.FotografiaRuta
+                espacio.FotografiaRuta,
+                espacio.TipoModalidadPrestamo,
+                espacio.TipoElementoPrestamo
             })
             .ToListAsync(cancellationToken);
 
@@ -166,7 +172,9 @@ public sealed class ConsultaEspacios : IConsultaEspacios
                 fila.Categoria,
                 fila.Aforo,
                 fila.TipoAprobacion,
-                MapeoEspacios.UrlFotografia(fila.FotografiaRuta)))
+                MapeoEspacios.UrlFotografia(fila.FotografiaRuta),
+                fila.TipoModalidadPrestamo,
+                fila.TipoElementoPrestamo))
             .ToArray();
 
         return new PaginaResultado<EspacioCatalogo>(elementos, total, filtro.Pagina, filtro.Tamano);
@@ -186,6 +194,8 @@ public sealed class ConsultaEspacios : IConsultaEspacios
                 espacio.Aforo,
                 espacio.TipoAprobacion,
                 espacio.FotografiaRuta,
+                espacio.TipoModalidadPrestamo,
+                espacio.TipoElementoPrestamo,
                 PuestosActivos = espacio.Puestos.Count(puesto => puesto.Estado == EstadoUnidad.Activo),
                 Puestos = espacio.Puestos
                     .Where(puesto => puesto.Estado == EstadoUnidad.Activo)
@@ -210,6 +220,38 @@ public sealed class ConsultaEspacios : IConsultaEspacios
                 fila.TipoAprobacion,
                 MapeoEspacios.UrlFotografia(fila.FotografiaRuta),
                 fila.PuestosActivos,
-                fila.Puestos);
+                fila.Puestos,
+                fila.TipoModalidadPrestamo,
+                fila.TipoElementoPrestamo);
+    }
+
+    /// <inheritdoc />
+    public async Task<EspacioParaReserva?> ObtenerParaReservaAsync(
+        Guid espacioId,
+        CancellationToken cancellationToken = default)
+    {
+        var fila = await _contexto.Espacios
+            .AsNoTracking()
+            .Where(espacio => espacio.Id == espacioId)
+            .Select(espacio => new
+            {
+                espacio.Id,
+                espacio.Nombre,
+                espacio.Estado,
+                espacio.TipoAprobacion,
+                espacio.TipoModalidadPrestamo,
+                espacio.TipoElementoPrestamo
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return fila is null
+            ? null
+            : new EspacioParaReserva(
+                fila.Id,
+                fila.Nombre,
+                fila.Estado,
+                fila.TipoAprobacion,
+                fila.TipoModalidadPrestamo,
+                fila.TipoElementoPrestamo);
     }
 }

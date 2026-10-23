@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Backend.IntegrationTests.Infraestructura;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -203,6 +204,97 @@ public sealed class ReservasEndpointsTests
         Assert.Equal(1, respuestas.Count(respuesta => respuesta.StatusCode == HttpStatusCode.Conflict));
     }
 
+    [DockerFact]
+    public async Task LaReservaFueraDelPeriodoActivoDevuelve409()
+    {
+        var cadena = await _sql.CrearBaseDeDatosAsync("reservas_periodo");
+        await using var fabrica = FabricaApiPruebas.Crear(cadena);
+        using var cliente = fabrica.CreateClient();
+        await AutenticarAdministradorAsync(cliente);
+
+        var area = await cliente.PostAsJsonAsync("/api/espacios", new
+        {
+            nombre = "Sala sin periodo",
+            ubicacion = "Bloque C",
+            categoria = "SalaComputo",
+            aforo = 5,
+            tipoAprobacion = "Automatica",
+            tipoModalidadPrestamo = "PuestoIndividual",
+            tipoElementoPrestamo = "EquipoComputo"
+        });
+
+        Assert.Equal(HttpStatusCode.Created, area.StatusCode);
+
+        using var areaDocumento = JsonDocument.Parse(await area.Content.ReadAsStringAsync());
+        var espacioId = areaDocumento.RootElement.GetProperty("id").GetGuid();
+
+        var puesto = await cliente.PostAsJsonAsync($"/api/espacios/{espacioId}/puestos", new { identificador = "PC-01" });
+        Assert.Equal(HttpStatusCode.Created, puesto.StatusCode);
+
+        using var puestoDocumento = JsonDocument.Parse(await puesto.Content.ReadAsStringAsync());
+        var puestoId = puestoDocumento.RootElement.GetProperty("id").GetGuid();
+
+        var estudiante = await RegistrarEstudianteAsync(cliente, "periodo@uninpahu.edu.co");
+        await AutenticarAsync(cliente, estudiante);
+
+        var sinPeriodo = await ReservarAsync(cliente, puestoId, Manana(10).Fecha, 10);
+        Assert.Equal(HttpStatusCode.Conflict, sinPeriodo.StatusCode);
+        Assert.Contains("sin-periodo-activo", await sinPeriodo.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        await AutenticarAdministradorAsync(cliente);
+        await ActivarPeriodoAsync(cliente, FechaLocal(-2), FechaLocal(-1));
+
+        await AutenticarAsync(cliente, estudiante);
+
+        var fueraDePeriodo = await ReservarAsync(cliente, puestoId, FechaLocal(3), 10);
+        Assert.Equal(HttpStatusCode.Conflict, fueraDePeriodo.StatusCode);
+        Assert.Contains(
+            "fuera-de-periodo-academico",
+            await fueraDePeriodo.Content.ReadAsStringAsync(),
+            StringComparison.Ordinal);
+    }
+
+    private static DateOnly FechaLocal(int dias) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, Zona).DateTime).AddDays(dias);
+
+    private static async Task ActivarPeriodoAsync(HttpClient cliente, DateOnly inicio, DateOnly fin)
+    {
+        var alta = await cliente.PostAsJsonAsync("/api/periodos-academicos", new
+        {
+            nombre = $"Periodo {inicio:yyyy-MM-dd}",
+            fechaInicio = inicio,
+            fechaFin = fin
+        });
+
+        Assert.Equal(HttpStatusCode.Created, alta.StatusCode);
+
+        using var documento = JsonDocument.Parse(await alta.Content.ReadAsStringAsync());
+        var periodoId = documento.RootElement.GetProperty("id").GetGuid();
+
+        var activar = await cliente.PutAsync($"/api/periodos-academicos/{periodoId}/activar", content: null);
+        Assert.Equal(HttpStatusCode.OK, activar.StatusCode);
+    }
+
+    private static async Task ActivarPeriodoAsync(HttpClient cliente)
+    {
+        var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, Zona).DateTime);
+
+        var alta = await cliente.PostAsJsonAsync("/api/periodos-academicos", new
+        {
+            nombre = "Periodo de pruebas",
+            fechaInicio = hoy.AddDays(-30),
+            fechaFin = hoy.AddDays(60)
+        });
+
+        Assert.Equal(HttpStatusCode.Created, alta.StatusCode);
+
+        using var documento = JsonDocument.Parse(await alta.Content.ReadAsStringAsync());
+        var periodoId = documento.RootElement.GetProperty("id").GetGuid();
+
+        var activar = await cliente.PutAsync($"/api/periodos-academicos/{periodoId}/activar", content: null);
+        Assert.Equal(HttpStatusCode.OK, activar.StatusCode);
+    }
+
     private static (DateOnly Fecha, DateTimeOffset Inicio, DateTimeOffset Fin) Manana(int hora)
     {
         var hoyLocal = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, Zona).DateTime);
@@ -239,7 +331,9 @@ public sealed class ReservasEndpointsTests
             ubicacion = "Bloque C, piso 1",
             categoria = "SalaComputo",
             aforo = 5,
-            tipoAprobacion = "Automatica"
+            tipoAprobacion = "Automatica",
+            tipoModalidadPrestamo = "PuestoIndividual",
+            tipoElementoPrestamo = "EquipoComputo"
         });
 
         Assert.Equal(HttpStatusCode.Created, area.StatusCode);
@@ -257,6 +351,8 @@ public sealed class ReservasEndpointsTests
 
         var creado = await puesto.Content.ReadFromJsonAsync<PuestoRespuesta>();
         Assert.NotNull(creado);
+
+        await ActivarPeriodoAsync(cliente);
 
         return creado;
     }

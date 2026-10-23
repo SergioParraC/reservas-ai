@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CategoriaEspacio, EstadoUnidad, TipoAprobacion } from '../models/espacio.models';
+import { CategoriaEspacio, EstadoUnidad, TipoAprobacion, TipoElementoPrestamo, TipoModalidadPrestamo } from '../models/espacio.models';
 import { EspaciosApi } from './espacios.api';
 
 describe('EspaciosApi', () => {
@@ -43,7 +43,9 @@ describe('EspaciosApi', () => {
         ubicacion: 'Bloque B',
         categoria: CategoriaEspacio.Laboratorio,
         aforo: 25,
-        tipoAprobacion: TipoAprobacion.Docente
+        tipoAprobacion: TipoAprobacion.Docente,
+        tipoModalidadPrestamo: TipoModalidadPrestamo.AreaCompleta,
+        tipoElementoPrestamo: TipoElementoPrestamo.LaboratorioEspecializado
       })
       .subscribe();
 
@@ -54,6 +56,8 @@ describe('EspaciosApi', () => {
       nombre: 'Laboratorio de Redes',
       categoria: 'Laboratorio',
       tipoAprobacion: 'Docente',
+      tipoModalidadPrestamo: 'AreaCompleta',
+      tipoElementoPrestamo: 'LaboratorioEspecializado',
       aforo: 25
     }));
     solicitud.flush({});
@@ -67,6 +71,8 @@ describe('EspaciosApi', () => {
         categoria: CategoriaEspacio.Laboratorio,
         aforo: 30,
         tipoAprobacion: TipoAprobacion.Docente,
+        tipoModalidadPrestamo: TipoModalidadPrestamo.AreaCompleta,
+        tipoElementoPrestamo: TipoElementoPrestamo.LaboratorioEspecializado,
         estado: EstadoUnidad.Activo,
         rowVersion: 'AAAA'
       })

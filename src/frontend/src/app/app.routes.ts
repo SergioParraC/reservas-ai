@@ -70,6 +70,36 @@ export const routes: Routes = [
       import('./features/areas/areas.routes').then((modulo) => modulo.ESPACIOS_ADMIN_ROUTES)
   },
   {
+    path: 'administracion/configuracion',
+    title: 'Calendario institucional',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [ROLES.administrativo] },
+    loadChildren: () =>
+      import('./features/administracion/configuracion/configuracion.routes').then(
+        (modulo) => modulo.CONFIGURACION_ROUTES
+      )
+  },
+  {
+    path: 'reservas-semestrales',
+    title: 'Series semestrales',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [ROLES.docente] },
+    loadChildren: () =>
+      import('./features/reservas-semestrales/reservas-semestrales.routes').then(
+        (modulo) => modulo.SERIES_ROUTES
+      )
+  },
+  {
+    path: 'bandeja-aprobaciones',
+    title: 'Bandeja de aprobaciones',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [ROLES.docente, ROLES.administrativo] },
+    loadChildren: () =>
+      import('./features/bandeja-aprobaciones/bandeja-aprobaciones.routes').then(
+        (modulo) => modulo.BANDEJA_ROUTES
+      )
+  },
+  {
     path: 'administracion/usuarios',
     title: 'Usuarios',
     canActivate: [authGuard, roleGuard],

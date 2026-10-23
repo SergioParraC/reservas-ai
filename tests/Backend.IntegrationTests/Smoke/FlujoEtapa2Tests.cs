@@ -71,7 +71,9 @@ public sealed class FlujoEtapa2Tests
                 ubicacion = "Bloque B",
                 categoria = "Laboratorio",
                 aforo = 3,
-                tipoAprobacion = "Docente"
+                tipoAprobacion = "Docente",
+                tipoModalidadPrestamo = "AreaCompleta",
+                tipoElementoPrestamo = "LaboratorioEspecializado"
             });
 
             Assert.Equal(HttpStatusCode.Created, alta.StatusCode);

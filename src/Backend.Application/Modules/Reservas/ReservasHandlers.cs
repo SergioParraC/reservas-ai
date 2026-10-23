@@ -5,6 +5,7 @@ using Backend.Application.Modules.Reservas.Dtos;
 using Backend.Domain.Entities;
 using Backend.Domain.Enums;
 using Backend.Domain.Exceptions;
+using Backend.Domain.Services;
 using Backend.Domain.ValueObjects;
 
 namespace Backend.Application.Modules.Reservas;
@@ -17,6 +18,7 @@ public sealed class CrearReservaHandler
 {
     private readonly IReservasRepository _repositorio;
     private readonly IConsultaReservas _consulta;
+    private readonly IConsultaCalendario _calendario;
     private readonly OpcionesReservas _opciones;
     private readonly IRelojSistema _reloj;
     private readonly IUsuarioActual _usuario;
@@ -25,12 +27,14 @@ public sealed class CrearReservaHandler
     public CrearReservaHandler(
         IReservasRepository repositorio,
         IConsultaReservas consulta,
+        IConsultaCalendario calendario,
         OpcionesReservas opciones,
         IRelojSistema reloj,
         IUsuarioActual usuario)
     {
         _repositorio = repositorio ?? throw new ArgumentNullException(nameof(repositorio));
         _consulta = consulta ?? throw new ArgumentNullException(nameof(consulta));
+        _calendario = calendario ?? throw new ArgumentNullException(nameof(calendario));
         _opciones = opciones ?? throw new ArgumentNullException(nameof(opciones));
         _reloj = reloj ?? throw new ArgumentNullException(nameof(reloj));
         _usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
@@ -55,6 +59,11 @@ public sealed class CrearReservaHandler
             return Resultado<ReservaDetalle>.Fallo(TipoFallo.NoEncontrado, MensajesReserva.PuestoNoEncontrado);
         }
 
+        if (puesto.ModalidadIncompatible)
+        {
+            return Resultado<ReservaDetalle>.Fallo(TipoFallo.Conflicto, MensajesEspacio.ModalidadIncompatible);
+        }
+
         if (!puesto.AdmitePrestamoDirecto)
         {
             return Resultado<ReservaDetalle>.Fallo(TipoFallo.Conflicto, MensajesReserva.PuestoNoReservable);
@@ -71,6 +80,13 @@ public sealed class CrearReservaHandler
                 TimeZoneInfo.ConvertTime(comando.Fin, zona),
                 politica,
                 ahora);
+
+            var calendario = await ObtenerCalendarioAsync(franja, zona, cancellationToken);
+
+            if (ValidarCalendario(franja, calendario, zona) is { } problema)
+            {
+                return problema;
+            }
 
             var reserva = Reserva.Confirmar(comando.PuestoId, titular, franja, ahora);
 
@@ -108,6 +124,36 @@ public sealed class CrearReservaHandler
                 excepcion.Message,
                 MapeoReservas.Errores(MapeoReservas.CampoDe(excepcion.Message), excepcion.Message));
         }
+    }
+
+    private async Task<CalendarioInstitucional> ObtenerCalendarioAsync(
+        FranjaHoraria franja,
+        TimeZoneInfo zona,
+        CancellationToken cancellationToken)
+    {
+        var inicio = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(franja.Inicio, zona).DateTime);
+        var fin = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(franja.Fin, zona).DateTime);
+
+        return await _calendario.ObtenerCalendarioAsync(inicio, fin, zona, cancellationToken);
+    }
+
+    private static Resultado<ReservaDetalle>? ValidarCalendario(
+        FranjaHoraria franja,
+        CalendarioInstitucional calendario,
+        TimeZoneInfo zona)
+    {
+        var evaluacion = calendario.Evaluar(franja, zona);
+
+        return evaluacion.Motivo switch
+        {
+            MotivoCalendario.SinPeriodoActivo => Resultado<ReservaDetalle>.Fallo(
+                TipoFallo.Conflicto, MensajesCalendario.SinPeriodoActivo),
+            MotivoCalendario.FueraDePeriodo => Resultado<ReservaDetalle>.Fallo(
+                TipoFallo.Conflicto, MensajesCalendario.FueraDePeriodoAcademico),
+            MotivoCalendario.NoOperativa => Resultado<ReservaDetalle>.Fallo(
+                TipoFallo.Conflicto, MensajesCalendario.FranjaNoOperativa),
+            _ => null
+        };
     }
 }
 

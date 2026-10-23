@@ -43,6 +43,16 @@ public sealed class EspacioConfiguration : IEntityTypeConfiguration<Espacio>
             .HasConversion<int>()
             .IsRequired();
 
+        builder.Property(espacio => espacio.TipoModalidadPrestamo)
+            .HasConversion<int>()
+            .HasDefaultValue(TipoModalidadPrestamo.AreaCompleta)
+            .IsRequired();
+
+        builder.Property(espacio => espacio.TipoElementoPrestamo)
+            .HasConversion<int>()
+            .HasDefaultValue(TipoElementoPrestamo.LaboratorioEspecializado)
+            .IsRequired();
+
         builder.Property(espacio => espacio.Estado)
             .HasConversion<int>()
             .IsRequired();

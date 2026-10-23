@@ -22,6 +22,58 @@ namespace Backend.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Backend.Domain.Entities.CorreoPendiente", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Asunto")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CuerpoHtml")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Destinatario")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<DateTimeOffset?>("EnviadoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Intentos")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("ProximoIntentoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("ReferenciaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UltimoError")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReferenciaId")
+                        .HasDatabaseName("IX_CorreosPendientes_ReferenciaId");
+
+                    b.HasIndex("Estado", "ProximoIntentoEn")
+                        .HasDatabaseName("IX_CorreosPendientes_Estado_ProximoIntento");
+
+                    b.ToTable("CorreosPendientes", (string)null);
+                });
+
             modelBuilder.Entity("Backend.Domain.Entities.Espacio", b =>
                 {
                     b.Property<Guid>("Id")
@@ -65,6 +117,16 @@ namespace Backend.Infrastructure.Persistence.Migrations
                     b.Property<int>("TipoAprobacion")
                         .HasColumnType("int");
 
+                    b.Property<int>("TipoElementoPrestamo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2);
+
+                    b.Property<int>("TipoModalidadPrestamo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("Ubicacion")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -84,6 +146,98 @@ namespace Backend.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_Espacios_Estado_Categoria_Aforo");
 
                     b.ToTable("Espacios", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.FranjaNoOperativa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("DiaSemana")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("EsFeriado")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly?>("FechaEspecifica")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("HoraFin")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly>("HoraInicio")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Activa", "DiaSemana", "FechaEspecifica")
+                        .HasDatabaseName("IX_FranjasNoOperativas_Vigencia");
+
+                    b.ToTable("FranjasNoOperativas", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FranjasNoOperativas_Criterio", "([DiaSemana] IS NOT NULL AND [FechaEspecifica] IS NULL) OR ([DiaSemana] IS NULL AND [FechaEspecifica] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.PeriodoAcademico", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ActualizadoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("EstadoActivo")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("FechaFin")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("FechaInicio")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EstadoActivo")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PeriodosAcademicos_Activo")
+                        .HasFilter("[EstadoActivo] = 1");
+
+                    b.HasIndex("FechaInicio", "FechaFin")
+                        .HasDatabaseName("IX_PeriodosAcademicos_Rango");
+
+                    b.ToTable("PeriodosAcademicos", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Domain.Entities.Puesto", b =>
@@ -173,6 +327,200 @@ namespace Backend.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_Reservas_PuestoId_Ventana");
 
                     b.ToTable("Reservas", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.ReservaEspacio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreadaEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("EspacioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("Fin")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("Inicio")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Origen")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("OrigenId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("TitularId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TitularId");
+
+                    b.HasIndex("EspacioId", "Inicio")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ReservasEspacio_EspacioId_Inicio_Activa")
+                        .HasFilter("[Estado] = 1");
+
+                    b.HasIndex("Origen", "OrigenId")
+                        .HasDatabaseName("IX_ReservasEspacio_Origen");
+
+                    b.HasIndex("EspacioId", "Inicio", "Fin")
+                        .HasDatabaseName("IX_ReservasEspacio_EspacioId_Ventana");
+
+                    b.ToTable("ReservasEspacio", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.ReservaRecurrente", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreadaEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("DiaSemana")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("DocenteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("EspacioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FechasFijas")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<TimeOnly>("HoraFin")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly>("HoraInicio")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Materia")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateOnly>("PeriodoFin")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("PeriodoInicio")
+                        .HasColumnType("date");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("TipoRecurrencia")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocenteId", "CreadaEn")
+                        .HasDatabaseName("IX_ReservasRecurrentes_DocenteId_CreadaEn");
+
+                    b.HasIndex("EspacioId", "PeriodoInicio")
+                        .HasDatabaseName("IX_ReservasRecurrentes_EspacioId_Periodo");
+
+                    b.ToTable("ReservasRecurrentes", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.SolicitudPrestamo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ArchivoNombreOriginal")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("ArchivoRuta")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<long>("ArchivoTamanoBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DocenteResponsable")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("EspacioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("Fin")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("Inicio")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Justificacion")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Materia")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("RadicadaEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("RevisadaEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("RevisorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SolicitanteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RevisorId");
+
+                    b.HasIndex("Estado", "RadicadaEn")
+                        .HasDatabaseName("IX_SolicitudesPrestamo_Estado_RadicadaEn");
+
+                    b.HasIndex("SolicitanteId", "RadicadaEn")
+                        .HasDatabaseName("IX_SolicitudesPrestamo_SolicitanteId_RadicadaEn");
+
+                    b.HasIndex("EspacioId", "Inicio", "Fin")
+                        .HasDatabaseName("IX_SolicitudesPrestamo_EspacioId_Ventana");
+
+                    b.ToTable("SolicitudesPrestamo", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Infrastructure.Persistence.Identity.Rol", b =>
@@ -423,6 +771,63 @@ namespace Backend.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired()
                         .HasConstraintName("FK_Reservas_AspNetUsers");
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.ReservaEspacio", b =>
+                {
+                    b.HasOne("Backend.Domain.Entities.Espacio", null)
+                        .WithMany()
+                        .HasForeignKey("EspacioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ReservasEspacio_Espacios");
+
+                    b.HasOne("Backend.Infrastructure.Persistence.Identity.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("TitularId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_ReservasEspacio_AspNetUsers");
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.ReservaRecurrente", b =>
+                {
+                    b.HasOne("Backend.Infrastructure.Persistence.Identity.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("DocenteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_ReservasRecurrentes_AspNetUsers");
+
+                    b.HasOne("Backend.Domain.Entities.Espacio", null)
+                        .WithMany()
+                        .HasForeignKey("EspacioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ReservasRecurrentes_Espacios");
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.SolicitudPrestamo", b =>
+                {
+                    b.HasOne("Backend.Domain.Entities.Espacio", null)
+                        .WithMany()
+                        .HasForeignKey("EspacioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SolicitudesPrestamo_Espacios");
+
+                    b.HasOne("Backend.Infrastructure.Persistence.Identity.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("RevisorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_SolicitudesPrestamo_Revisor");
+
+                    b.HasOne("Backend.Infrastructure.Persistence.Identity.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("SolicitanteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_SolicitudesPrestamo_Solicitante");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

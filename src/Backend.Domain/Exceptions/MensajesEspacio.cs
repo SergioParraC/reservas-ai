@@ -62,4 +62,19 @@ public static class MensajesEspacio
 
     /// <summary>El área solicitada no existe.</summary>
     public const string EspacioNoEncontrado = "El área solicitada no existe.";
+
+    /// <summary>La modalidad de préstamo recibida no pertenece al enum oficial.</summary>
+    public const string ModalidadInvalida = "La modalidad de préstamo del área no es válida.";
+
+    /// <summary>El elemento de préstamo recibido no pertenece al enum oficial.</summary>
+    public const string ElementoInvalido = "El elemento de préstamo del área no es válido.";
+
+    /// <summary>La combinación de modalidad y elemento no es coherente.</summary>
+    public const string CombinacionPrestamoInvalida = "La combinación de modalidad y elemento de préstamo no es válida para el área.";
+
+    /// <summary>La modalidad no puede cambiarse porque el área tiene ocupación futura.</summary>
+    public const string ModalidadConOcupacion = "No es posible cambiar la modalidad de préstamo: el área tiene ocupación futura.";
+
+    /// <summary>La modalidad del área no admite el tipo de reserva solicitado.</summary>
+    public const string ModalidadIncompatible = "La modalidad de préstamo del área no admite este tipo de reserva.";
 }

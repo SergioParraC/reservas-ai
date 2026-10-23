@@ -10,13 +10,18 @@ public sealed record PuestoReservable(
     Guid EspacioId,
     string EspacioNombre,
     EstadoUnidad EstadoEspacio,
-    TipoAprobacion Aprobacion)
+    TipoAprobacion Aprobacion,
+    TipoModalidadPrestamo TipoModalidadPrestamo = TipoModalidadPrestamo.PuestoIndividual)
 {
     /// <summary>Indica si el puesto admite reserva autoconfirmada inmediata.</summary>
     public bool AdmitePrestamoDirecto =>
         EstadoPuesto == EstadoUnidad.Activo
         && EstadoEspacio == EstadoUnidad.Activo
-        && Aprobacion == TipoAprobacion.Automatica;
+        && Aprobacion == TipoAprobacion.Automatica
+        && TipoModalidadPrestamo != TipoModalidadPrestamo.AreaCompleta;
+
+    /// <summary>Indica si la modalidad del área exige reservar el área completa.</summary>
+    public bool ModalidadIncompatible => TipoModalidadPrestamo == TipoModalidadPrestamo.AreaCompleta;
 }
 
 /// <summary>Intervalo ocupado por una reserva vigente.</summary>

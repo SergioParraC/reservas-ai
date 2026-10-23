@@ -5,6 +5,7 @@ using Backend.Application.Modules.Reservas.Dtos;
 using Backend.Domain.Entities;
 using Backend.Domain.Enums;
 using Backend.Domain.Exceptions;
+using Backend.Domain.Services;
 using Moq;
 
 namespace Backend.UnitTests.Reservas;
@@ -59,7 +60,41 @@ public sealed class CrearReservaHandlerTests
         var usuario = new Mock<IUsuarioActual>();
         usuario.SetupGet(servicio => servicio.UsuarioId).Returns(Titular);
 
-        return new CrearReservaHandler(repositorio.Object, consulta.Object, Opciones(), reloj.Object, usuario.Object);
+        return new CrearReservaHandler(
+            repositorio.Object,
+            consulta.Object,
+            CalendarioAbierto().Object,
+            Opciones(),
+            reloj.Object,
+            usuario.Object);
+    }
+
+    private static Mock<IConsultaCalendario> CalendarioAbierto()
+    {
+        var zona = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
+        var periodo = PeriodoAcademico.Crear(
+            "2026-2",
+            new DateOnly(2026, 8, 1),
+            new DateOnly(2026, 12, 15),
+            Ahora);
+        periodo.Activar(Ahora);
+
+        var calendario = CalendarioInstitucional.Crear(
+            periodo,
+            [],
+            new DateOnly(2026, 11, 1),
+            new DateOnly(2026, 12, 1),
+            zona);
+
+        var puerto = new Mock<IConsultaCalendario>();
+        puerto.Setup(servicio => servicio.ObtenerCalendarioAsync(
+                It.IsAny<DateOnly>(),
+                It.IsAny<DateOnly>(),
+                It.IsAny<TimeZoneInfo>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(calendario);
+
+        return puerto;
     }
 
     [Fact]

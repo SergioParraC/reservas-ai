@@ -42,6 +42,8 @@ public sealed class AreasEndpointsTests
             categoria = "Laboratorio",
             aforo = 25,
             tipoAprobacion = "Docente",
+            tipoModalidadPrestamo = "AreaCompleta",
+            tipoElementoPrestamo = "LaboratorioEspecializado",
             estado = "Activo",
             codigoQR = "QR-AAAAAAAAAAAAAAAAAAAAAAAAAA",
             rowVersion = detalle.RowVersion
@@ -106,7 +108,9 @@ public sealed class AreasEndpointsTests
             ubicacion = "Bloque C",
             categoria = "SalaComputo",
             aforo = 10,
-            tipoAprobacion = "Docente"
+            tipoAprobacion = "Docente",
+            tipoModalidadPrestamo = "PuestoIndividual",
+            tipoElementoPrestamo = "EquipoComputo"
         });
         Assert.Equal(HttpStatusCode.Conflict, repetido.StatusCode);
 
@@ -120,6 +124,8 @@ public sealed class AreasEndpointsTests
             categoria = "SalaComputo",
             aforo = 0,
             tipoAprobacion = "Docente",
+            tipoModalidadPrestamo = "PuestoIndividual",
+            tipoElementoPrestamo = "EquipoComputo",
             estado = "Activo",
             rowVersion = detalle.RowVersion
         });
@@ -133,6 +139,8 @@ public sealed class AreasEndpointsTests
             categoria = "SalaComputo",
             aforo = 1,
             tipoAprobacion = "Docente",
+            tipoModalidadPrestamo = "PuestoIndividual",
+            tipoElementoPrestamo = "EquipoComputo",
             estado = "Inactivo",
             rowVersion = detalle.RowVersion
         });
@@ -153,7 +161,9 @@ public sealed class AreasEndpointsTests
             ubicacion = "Bloque B",
             categoria = "Laboratorio",
             aforo = 10,
-            tipoAprobacion = "Docente"
+            tipoAprobacion = "Docente",
+            tipoModalidadPrestamo = "AreaCompleta",
+            tipoElementoPrestamo = "LaboratorioEspecializado"
         });
 
         Assert.Equal(HttpStatusCode.Unauthorized, anonimo.StatusCode);
@@ -181,7 +191,9 @@ public sealed class AreasEndpointsTests
             ubicacion = "Bloque B",
             categoria = "Laboratorio",
             aforo = 10,
-            tipoAprobacion = "Docente"
+            tipoAprobacion = "Docente",
+            tipoModalidadPrestamo = "AreaCompleta",
+            tipoElementoPrestamo = "LaboratorioEspecializado"
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, denegado.StatusCode);
@@ -211,7 +223,9 @@ public sealed class AreasEndpointsTests
             ubicacion,
             categoria = "Laboratorio",
             aforo,
-            tipoAprobacion = "Docente"
+            tipoAprobacion = "Docente",
+            tipoModalidadPrestamo = "AreaCompleta",
+            tipoElementoPrestamo = "LaboratorioEspecializado"
         });
 
         Assert.Equal(HttpStatusCode.Created, respuesta.StatusCode);

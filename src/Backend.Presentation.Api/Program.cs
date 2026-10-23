@@ -1,8 +1,11 @@
 using Backend.Application.Autenticacion;
 using Backend.Application.Common;
 using Backend.Application.Interfaces;
+using Backend.Application.Modules.Aprobaciones;
 using Backend.Application.Modules.Areas;
+using Backend.Application.Modules.Calendario;
 using Backend.Application.Modules.Reservas;
+using Backend.Application.Modules.Solicitudes;
 using Backend.Application.Modules.Usuarios;
 using Backend.Infrastructure;
 using Backend.Infrastructure.Persistence;
@@ -53,6 +56,25 @@ builder.Services.AddScoped<VincularEntraHandler>();
 builder.Services.AddScoped<DesvincularEntraHandler>();
 builder.Services.AddScoped<ConsultarUsuariosHandler>();
 builder.Services.AddScoped<CambiarRolHandler>();
+
+builder.Services.AddScoped<ListarPeriodosHandler>();
+builder.Services.AddScoped<CrearPeriodoHandler>();
+builder.Services.AddScoped<ActualizarPeriodoHandler>();
+builder.Services.AddScoped<ActivarPeriodoHandler>();
+builder.Services.AddScoped<ConsultarCalendarioVigenteHandler>();
+builder.Services.AddScoped<ListarFranjasHandler>();
+builder.Services.AddScoped<CrearFranjaHandler>();
+builder.Services.AddScoped<ActualizarFranjaHandler>();
+builder.Services.AddScoped<EliminarFranjaHandler>();
+
+builder.Services.AddScoped<CrearSerieHandler>();
+builder.Services.AddScoped<ConsultarSeriesHandler>();
+
+builder.Services.AddScoped<RadicarSolicitudHandler>();
+builder.Services.AddScoped<ConsultarSolicitudesHandler>();
+builder.Services.AddScoped<DescargarPreinformeHandler>();
+builder.Services.AddScoped<ConsultarBandejaHandler>();
+builder.Services.AddScoped<CambiarEstadoSolicitudHandler>();
 
 var app = builder.Build();
 

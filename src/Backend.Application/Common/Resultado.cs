@@ -24,7 +24,13 @@ public enum TipoFallo
     NoAutorizado = 5,
 
     /// <summary>Fallo inesperado del servidor.</summary>
-    ErrorInterno = 6
+    ErrorInterno = 6,
+
+    /// <summary>El archivo adjunto supera el tamaño máximo admitido.</summary>
+    ArchivoDemasiadoGrande = 7,
+
+    /// <summary>El archivo adjunto no tiene un tipo de contenido admitido.</summary>
+    TipoNoSoportado = 8
 }
 
 /// <summary>Resultado de un caso de uso que no devuelve valor.</summary>
