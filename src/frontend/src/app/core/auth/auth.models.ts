@@ -6,6 +6,9 @@ export interface TokenEmitido {
   roles: string[];
 }
 
+/** Origen de la credencial que sostiene la sesión. */
+export type OrigenSesion = 'local' | 'entra';
+
 /** Perfil del portador devuelto por `GET /api/auth/me`. */
 export interface PerfilUsuario {
   id: string;
@@ -13,6 +16,7 @@ export interface PerfilUsuario {
   correoInstitucional: string;
   tipoActor: number;
   roles: string[];
+  vinculado?: boolean;
 }
 
 /** Sesión persistida en el almacenamiento local. */
@@ -20,6 +24,7 @@ export interface Sesion {
   token: string;
   expiraEn: string;
   perfil: PerfilUsuario;
+  origen?: OrigenSesion;
 }
 
 /** Credenciales locales enviadas al inicio de sesión. */

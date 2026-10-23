@@ -1,0 +1,105 @@
+<section class="consola">
+  <h1>Usuarios</h1>
+  <p class="ayuda">Consulte las cuentas registradas y asigne el rol que rige sus permisos.</p>
+
+  @if (!esAdministrativo()) {
+    <p class="aviso" role="alert">No tiene permisos para administrar las cuentas de la plataforma.</p>
+  } @else {
+    <form [formGroup]="filtros" (ngSubmit)="aplicar()" class="filtros">
+      <label>
+        Buscar
+        <input formControlName="q" placeholder="Nombre o correo" />
+      </label>
+      <label>
+        Rol
+        <select formControlName="rol">
+          <option value="">Todos</option>
+          @for (rol of rolesAsignables; track rol) {
+            <option [value]="rol">{{ rol }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Vínculo
+        <select formControlName="vinculado">
+          <option value="todos">Todos</option>
+          <option value="si">Vinculadas</option>
+          <option value="no">Sin vínculo</option>
+        </select>
+      </label>
+      <button type="submit">Filtrar</button>
+    </form>
+
+    @if (avisoRenovacion(); as aviso) {
+      <p class="aviso-ok" role="status">{{ aviso }}</p>
+    }
+
+    @if (conflicto(); as mensaje) {
+      <p class="conflicto" role="alert">{{ mensaje }}</p>
+    }
+
+    @if (cambioPendiente(); as cambio) {
+      <div class="confirmacion" role="dialog" aria-label="Confirmar cambio de rol">
+        <p>
+          ¿Cambiar el rol de <strong>{{ cambio.usuario.correoInstitucional }}</strong> a
+          <strong>{{ cambio.rol }}</strong>?
+        </p>
+        <div class="acciones">
+          <button type="button" (click)="confirmarCambio()" [disabled]="cambiando()">Confirmar</button>
+          <button type="button" class="secundario" (click)="cancelarCambio()">Cancelar</button>
+        </div>
+      </div>
+    }
+
+    @if (cargando()) {
+      <p role="status">Cargando cuentas…</p>
+    } @else if (pagina(); as resultado) {
+      @if (resultado.elementos.length === 0) {
+        <p class="vacio" role="status">No hay cuentas que coincidan con los filtros.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Vínculo</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (usuario of resultado.elementos; track usuario.id) {
+              <tr>
+                <td>{{ usuario.nombreCompleto }}</td>
+                <td>{{ usuario.correoInstitucional }}</td>
+                <td>
+                  <select
+                    [value]="usuario.rol ?? ''"
+                    (change)="solicitarCambio(usuario, $any($event.target).value)"
+                    [attr.aria-label]="'Rol de ' + usuario.correoInstitucional"
+                  >
+                    @for (rol of rolesAsignables; track rol) {
+                      <option [value]="rol">{{ rol }}</option>
+                    }
+                  </select>
+                </td>
+                <td>{{ usuario.vinculado ? 'Entra ID' : 'Sin vínculo' }}</td>
+                <td>{{ usuario.activo ? 'Activa' : 'Inactiva' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <div class="paginacion">
+          <button type="button" (click)="paginaAnterior()" [disabled]="paginaActual() <= 1">
+            Anterior
+          </button>
+          <span>Página {{ paginaActual() }} de {{ totalPaginas() }}</span>
+          <button type="button" (click)="paginaSiguiente()" [disabled]="paginaActual() >= totalPaginas()">
+            Siguiente
+          </button>
+        </div>
+      }
+    }
+  }
+</section>

@@ -23,7 +23,7 @@ public sealed class EndpointsAutenticacionTests
     private const string ClaveJwt = "clave-de-pruebas-suficientemente-larga-para-hmac-256";
     private const string Emisor = "https://api.reservas-espacios.edu";
     private const string Audiencia = "reservas-espacios-spa";
-    private const string CorreoAdmin = "admin@universidad.edu";
+    private const string CorreoAdmin = "admin@uninpahu.edu.co";
     private const string Contrasena = "Clave.Segura.2026";
 
     private readonly SqlServerContainerFixture _sql;
@@ -57,7 +57,7 @@ public sealed class EndpointsAutenticacionTests
 
         var inexistente = await cliente.PostAsJsonAsync(
             "/api/auth/login",
-            new { correoInstitucional = "nadie@universidad.edu", contrasena = "Clave.Incorrecta.1" });
+            new { correoInstitucional = "nadie@uninpahu.edu.co", contrasena = "Clave.Incorrecta.1" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, inexistente.StatusCode);
 
@@ -110,7 +110,7 @@ public sealed class EndpointsAutenticacionTests
         var permitido = await cliente.GetAsync("/api/administracion/verificacion");
         Assert.Equal(HttpStatusCode.OK, permitido.StatusCode);
 
-        var correoEstudiante = "estudiante@universidad.edu";
+        var correoEstudiante = "estudiante@uninpahu.edu.co";
         await CrearUsuarioAsync(fabrica, correoEstudiante);
         var tokenEstudiante = await IniciarSesionAsync(cliente, correoEstudiante, Contrasena);
 

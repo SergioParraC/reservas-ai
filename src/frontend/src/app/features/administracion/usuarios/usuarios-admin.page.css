@@ -1,0 +1,116 @@
+.consola {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ayuda {
+  margin: 0;
+  color: #6b7280;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-radius: 0.75rem;
+}
+
+.filtros label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-borde);
+  border-radius: 0.5rem;
+  font: inherit;
+  background: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--color-borde);
+}
+
+th,
+td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 0.9rem;
+}
+
+th {
+  background: #f1f5f9;
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.aviso,
+.conflicto,
+.aviso-ok,
+.vacio {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.25rem;
+}
+
+.aviso {
+  border-left: 4px solid #b45309;
+  background: #fffbeb;
+}
+
+.conflicto {
+  border-left: 4px solid #b45309;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.aviso-ok {
+  border-left: 4px solid #047857;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.vacio {
+  background: #fff;
+  border: 1px solid var(--color-borde);
+}
+
+.confirmacion {
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-left: 4px solid var(--color-primario);
+}
+
+.confirmacion p {
+  margin: 0 0 0.75rem;
+}
+
+.acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.secundario {
+  background: #fff;
+  color: var(--color-primario);
+  border: 1px solid var(--color-primario);
+}

@@ -1,16 +1,14 @@
 using Backend.Application.Autenticacion;
 using Backend.Application.Common;
 using Backend.Application.Interfaces;
-using Backend.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Backend.Infrastructure.Identity;
 
 /// <summary>
 /// Resuelve el perfil institucional de una identidad federada de Entra ID.
-/// Reutiliza el perfil existente por <c>oid</c> o lo aprovisiona cuando el rol
-/// institucional es académico (<c>Docente</c> o <c>Estudiante</c>).
-/// Nunca crea ni modifica roles administrativos.
+/// Solo acepta identidades previamente vinculadas por <c>oid</c> y aplica el rol
+/// asignado en la plataforma: nunca aprovisiona cuentas ni deriva roles del token.
 /// </summary>
 public sealed class EntraIdProfileResolver : IEntraIdProfileResolver
 {
@@ -31,50 +29,37 @@ public sealed class EntraIdProfileResolver : IEntraIdProfileResolver
     {
         ArgumentNullException.ThrowIfNull(identidad);
 
-        var rolesInstitucionales = NormalizarRoles(identidad.RolesInstitucionales);
-
-        if (rolesInstitucionales.Count == 0)
+        if (string.IsNullOrWhiteSpace(identidad.Oid))
         {
-            return ResultadoPerfilFederado.Fallo(ErrorAutenticacion.SinRolHabilitado);
+            _registro.LogWarning("Acceso federado rechazado: token sin identificador institucional.");
+            return ResultadoPerfilFederado.Fallo(ErrorAutenticacion.SinVinculacion);
         }
 
         var cuenta = await _identidad.BuscarPorIdentificadorFederadoAsync(identidad.Oid, cancellationToken);
 
         if (cuenta is null)
         {
-            var rol = rolesInstitucionales[0];
-            var tipoActor = string.Equals(rol, RolesAplicacion.Docente, StringComparison.OrdinalIgnoreCase)
-                ? TipoActor.Docente
-                : TipoActor.Estudiante;
-
-            cuenta = await _identidad.CrearPerfilFederadoAsync(
-                new AltaPerfilFederado(identidad.NombreCompleto, identidad.CorreoInstitucional, identidad.Oid, tipoActor),
-                rol,
-                cancellationToken);
-
-            if (cuenta is null)
-            {
-                return ResultadoPerfilFederado.Fallo(ErrorAutenticacion.PerfilInexistente);
-            }
-
-            _registro.LogInformation(
-                "Perfil federado aprovisionado: usuario={UsuarioId} rol={Rol} oid={Oid}",
-                cuenta.Id,
-                rol,
+            _registro.LogWarning(
+                "Acceso federado rechazado: identidad sin vínculo local. oid={Oid}",
                 identidad.Oid);
+
+            return ResultadoPerfilFederado.Fallo(ErrorAutenticacion.SinVinculacion);
         }
-        else if (!cuenta.Activo)
+
+        if (!cuenta.Activo)
         {
             return ResultadoPerfilFederado.Fallo(ErrorAutenticacion.PerfilInexistente);
         }
 
         var rolesLocales = await _identidad.ObtenerRolesAsync(cuenta.Id, cancellationToken);
-        var rolesEfectivos = rolesLocales
-            .Intersect(rolesInstitucionales, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
 
-        if (rolesEfectivos.Length == 0)
+        if (rolesLocales.Count == 0)
         {
+            _registro.LogWarning(
+                "Acceso federado rechazado: cuenta sin rol vigente. usuario={UsuarioId} oid={Oid}",
+                cuenta.Id,
+                identidad.Oid);
+
             return ResultadoPerfilFederado.Fallo(ErrorAutenticacion.SinRolHabilitado);
         }
 
@@ -83,27 +68,16 @@ public sealed class EntraIdProfileResolver : IEntraIdProfileResolver
         _registro.LogInformation(
             "Acceso federado autorizado: usuario={UsuarioId} rol={Rol} oid={Oid}",
             cuenta.Id,
-            string.Join(",", rolesEfectivos),
+            string.Join(",", rolesLocales),
             identidad.Oid);
 
         return ResultadoPerfilFederado.Exito(
-            new PerfilUsuario(cuenta.Id, cuenta.NombreCompleto, cuenta.CorreoInstitucional, cuenta.TipoActor, rolesEfectivos));
-    }
-
-    private static List<string> NormalizarRoles(IReadOnlyCollection<string> rolesInstitucionales)
-    {
-        var normalizados = new List<string>(2);
-
-        if (rolesInstitucionales.Any(rol => string.Equals(rol, RolesAplicacion.Docente, StringComparison.OrdinalIgnoreCase)))
-        {
-            normalizados.Add(RolesAplicacion.Docente);
-        }
-
-        if (rolesInstitucionales.Any(rol => string.Equals(rol, RolesAplicacion.Estudiante, StringComparison.OrdinalIgnoreCase)))
-        {
-            normalizados.Add(RolesAplicacion.Estudiante);
-        }
-
-        return normalizados;
+            new PerfilUsuario(
+                cuenta.Id,
+                cuenta.NombreCompleto,
+                cuenta.CorreoInstitucional,
+                cuenta.TipoActor,
+                rolesLocales,
+                Vinculado: true));
     }
 }

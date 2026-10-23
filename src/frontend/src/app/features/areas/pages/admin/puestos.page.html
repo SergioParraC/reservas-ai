@@ -1,0 +1,80 @@
+<a routerLink="/administracion/espacios" class="volver">← Volver al listado</a>
+
+@if (area(); as datos) {
+  <header class="encabezado">
+    <div>
+      <h1>Puestos de {{ datos.nombre }}</h1>
+      <p class="ayuda">{{ datos.ubicacion }} · Aforo {{ datos.aforo }} · {{ datos.puestos.length }} puesto(s) registrados</p>
+    </div>
+  </header>
+} @else {
+  <h1>Puestos del área</h1>
+}
+
+@if (conflicto(); as mensaje) {
+  <p class="conflicto" role="alert">{{ mensaje }}</p>
+}
+
+@if (mensaje(); as texto) {
+  <p class="exito" role="status">{{ texto }}</p>
+}
+
+@if (cargando()) {
+  <p role="status">Cargando puestos…</p>
+} @else {
+  <form [formGroup]="formulario" (ngSubmit)="agregar()" class="alta" novalidate>
+    <label>
+      Identificador
+      <input formControlName="identificador" maxlength="50" placeholder="PC-01" />
+      @if (errorDe('identificador') ?? identificadorInvalido()) {
+        <span class="validacion">
+          {{ errorDe('identificador') ?? 'El identificador del puesto es obligatorio (máximo 50 caracteres).' }}
+        </span>
+      }
+    </label>
+
+    <label>
+      Descripción del equipo
+      <input formControlName="descripcionEquipo" maxlength="150" placeholder="Equipo de escritorio" />
+    </label>
+
+    <button type="submit" [disabled]="agregando()">
+      {{ agregando() ? 'Agregando…' : 'Agregar puesto' }}
+    </button>
+  </form>
+
+  @if (area(); as datos) {
+    @if (datos.puestos.length === 0) {
+      <p class="vacio" role="status">El área todavía no tiene puestos registrados.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Identificador</th>
+            <th>Equipo</th>
+            <th>Estado</th>
+            <th>Código QR</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (puesto of datos.puestos; track puesto.id) {
+            <tr>
+              <td>{{ puesto.identificador }}</td>
+              <td>{{ puesto.descripcionEquipo ?? '—' }}</td>
+              <td>{{ puesto.estado === estadoActivo ? 'Activo' : 'Inactivo' }}</td>
+              <td><code>{{ puesto.codigoQR }}</code></td>
+              <td>
+                @if (puesto.estado === estadoActivo) {
+                  <button type="button" class="peligro" (click)="desactivar(puesto.id)">Dar de baja</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+
+    <app-plantilla-qr-panel [espacioIds]="idsPlantilla()" class="panel" />
+  }
+}

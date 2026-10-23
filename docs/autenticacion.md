@@ -102,7 +102,7 @@ dotnet run --project src/Backend.Presentation.Api
 # Login del administrador sembrado
 curl -X POST https://localhost:7xxx/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"correoInstitucional":"admin@universidad.edu","contrasena":"<contraseña>"}'
+  -d '{"correoInstitucional":"admin@uninpahu.edu.co","contrasena":"<contraseña>"}'
 ```
 
 La validación federada se activa sin cambiar código: basta configurar `EntraId:TenantId` y

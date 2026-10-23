@@ -1,0 +1,90 @@
+<a routerLink="/administracion/espacios" class="volver">← Volver al listado</a>
+
+<h1>{{ editando() ? 'Editar área' : 'Nueva área' }}</h1>
+
+@if (conflicto(); as mensaje) {
+  <p class="conflicto" role="alert">{{ mensaje }}</p>
+}
+
+@if (cargando()) {
+  <p role="status">Cargando área…</p>
+} @else {
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" class="formulario" novalidate>
+    <label>
+      Nombre
+      <input formControlName="nombre" maxlength="100" />
+      @if (errorDe('nombre') ?? nombreInvalido()) {
+        <span class="validacion">{{ errorDe('nombre') ?? 'El nombre es obligatorio (máximo 100 caracteres).' }}</span>
+      }
+    </label>
+
+    <label>
+      Ubicación
+      <input formControlName="ubicacion" maxlength="150" />
+      @if (errorDe('ubicacion') ?? ubicacionInvalida()) {
+        <span class="validacion">
+          {{ errorDe('ubicacion') ?? 'La ubicación es obligatoria (máximo 150 caracteres).' }}
+        </span>
+      }
+    </label>
+
+    <label>
+      Categoría
+      <select formControlName="categoria">
+        @for (categoria of categorias; track categoria.valor) {
+          <option [ngValue]="categoria.valor">{{ categoria.etiqueta }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Aforo
+      <input type="number" min="1" [max]="aforoMaximo" formControlName="aforo" />
+      @if (errorDe('aforo') ?? aforoInvalido()) {
+        <span class="validacion">
+          {{ errorDe('aforo') ?? 'El aforo debe estar entre 1 y ' + aforoMaximo + '.' }}
+        </span>
+      }
+    </label>
+
+    <label>
+      Tipo de aprobación
+      <select formControlName="tipoAprobacion">
+        @for (tipo of tiposAprobacion; track tipo.valor) {
+          <option [ngValue]="tipo.valor">{{ tipo.etiqueta }}</option>
+        }
+      </select>
+    </label>
+
+    @if (editando()) {
+      <label>
+        Estado
+        <select formControlName="estado">
+          @for (estado of estados; track estado.valor) {
+            <option [ngValue]="estado.valor">{{ estado.etiqueta }}</option>
+          }
+        </select>
+      </label>
+
+      <fieldset class="fotografia">
+        <legend>Fotografía</legend>
+        <input type="file" accept="image/png,image/jpeg,image/webp" (change)="subirFoto($event)" />
+        @if (fotografiaUrl(); as url) {
+          <img [src]="url" alt="Fotografía actual del área" />
+          <button type="button" class="secundario" (click)="quitarFoto()">Eliminar fotografía</button>
+        }
+      </fieldset>
+    }
+
+    <div class="acciones">
+      <button type="submit" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : 'Guardar área' }}
+      </button>
+      <a routerLink="/administracion/espacios">Cancelar</a>
+    </div>
+  </form>
+
+  @if (editando()) {
+    <app-plantilla-qr-panel [espacioIds]="idsPlantilla()" class="panel" />
+  }
+}

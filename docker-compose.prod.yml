@@ -43,6 +43,7 @@ services:
       Seed__AdminEmail: "${SEED_ADMIN_EMAIL:?define SEED_ADMIN_EMAIL en .env.prod}"
       Seed__AdminPassword: "${SEED_ADMIN_PASSWORD:?define SEED_ADMIN_PASSWORD en .env.prod}"
       Seed__AdminNombre: "${SEED_ADMIN_NOMBRE:-Administrador del Sistema}"
+      Identidad__DominioCorreoInstitucional: "${DOMINIO_CORREO_INSTITUCIONAL:-uninpahu.edu.co}"
       Cors__OrigenesPermitidos__0: "https://${DOMINIO}"
     depends_on:
       mssql:

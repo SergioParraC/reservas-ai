@@ -6,7 +6,9 @@ import { SesionStore } from '../auth/sesion.store';
 
 /**
  * Adjunta `Authorization: Bearer` únicamente a las solicitudes dirigidas a la API
- * cuando existe una sesión con token vigente.
+ * cuando existe una sesión con token vigente. El token almacenado corresponde al origen
+ * de la sesión (`local` o `entra`), de modo que este interceptor es el único que decide
+ * qué credencial viaja.
  */
 export const jwtInterceptor: HttpInterceptorFn = (solicitud, siguiente) => {
   const sesion = inject(SesionStore);

@@ -21,7 +21,7 @@ internal static class FabricaApiPruebas
     public const string AudienciaLocal = "reservas-espacios-spa";
 
     /// <summary>Correo del administrador sembrado.</summary>
-    public const string CorreoAdmin = "admin@universidad.edu";
+    public const string CorreoAdmin = "admin@uninpahu.edu.co";
 
     /// <summary>Contraseña del administrador sembrado.</summary>
     public const string ContrasenaAdmin = "Clave.Segura.2026";
@@ -112,6 +112,13 @@ internal static class FabricaApiPruebas
         "EntraId__ClientId",
         "EntraId__Audience",
         "EntraId__AuthorityOverride",
-        "Identity__Lockout__MaxIntentosFallidos"
+        "Identity__Lockout__MaxIntentosFallidos",
+        "Espacios__AforoMaximo",
+        "Espacios__EtiquetasPorHoja",
+        "Espacios__TamanoMaximoImagenBytes",
+        "Espacios__MaximoUnidadesPlantilla",
+        "Almacen__RutaBase",
+        "Identidad__PermitirAutorregistro",
+        "Identidad__DominioCorreoInstitucional"
     ];
 }

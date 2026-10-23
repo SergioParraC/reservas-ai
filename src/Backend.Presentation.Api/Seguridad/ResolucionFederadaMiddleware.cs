@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Backend.Application.Autenticacion;
+using Backend.Application.Common;
 using Backend.Application.Interfaces;
 using Backend.Infrastructure.Identity;
 using Backend.Presentation.Api.Problemas;
@@ -40,7 +41,12 @@ public sealed class ResolucionFederadaMiddleware
         if (identidad is null)
         {
             _registro.LogWarning("Acceso federado rechazado: token sin identificador institucional.");
-            await EscribirProblemaAsync(contexto, 403, "permisos-insuficientes", "Permisos insuficientes");
+            await EscribirProblemaAsync(
+                contexto,
+                403,
+                "vinculacion-requerida",
+                "Vinculación requerida",
+                Backend.Domain.Exceptions.MensajesIdentidad.SinVinculacion);
             return;
         }
 
@@ -53,7 +59,16 @@ public sealed class ResolucionFederadaMiddleware
                 resultado.Error,
                 identidad.Oid);
 
-            await EscribirProblemaAsync(contexto, 403, "permisos-insuficientes", "Permisos insuficientes");
+            var sinVinculacion = resultado.Error == ErrorAutenticacion.SinVinculacion;
+
+            await EscribirProblemaAsync(
+                contexto,
+                403,
+                sinVinculacion ? "vinculacion-requerida" : "permisos-insuficientes",
+                sinVinculacion ? "Vinculación requerida" : "Permisos insuficientes",
+                sinVinculacion
+                    ? Backend.Domain.Exceptions.MensajesIdentidad.SinVinculacion
+                    : Backend.Domain.Exceptions.MensajesIdentidad.SinHabilitacionInstitucional);
             return;
         }
 
@@ -103,7 +118,12 @@ public sealed class ResolucionFederadaMiddleware
         return new ClaimsPrincipal(new ClaimsIdentity(claims, esquema, ClaimTipos.Nombre, ClaimTipos.Roles));
     }
 
-    private static async Task EscribirProblemaAsync(HttpContext contexto, int estado, string slug, string titulo)
+    private static async Task EscribirProblemaAsync(
+        HttpContext contexto,
+        int estado,
+        string slug,
+        string titulo,
+        string detalle)
     {
         if (contexto.Response.HasStarted)
         {
@@ -114,7 +134,7 @@ public sealed class ResolucionFederadaMiddleware
             estado,
             slug,
             titulo,
-            Backend.Domain.Exceptions.MensajesIdentidad.SinHabilitacionInstitucional,
+            detalle,
             contexto);
 
         contexto.Response.StatusCode = estado;

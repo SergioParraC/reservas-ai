@@ -1,4 +1,4 @@
-﻿import { TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, provideRouter, RouterStateSnapshot, UrlTree } from '@angular/router';
 
 import { PerfilUsuario } from '../auth/auth.models';
@@ -8,7 +8,7 @@ import { roleGuard } from './role.guard';
 const PERFIL_ESTUDIANTE: PerfilUsuario = {
   id: 'usuario-2',
   nombreCompleto: 'Luis Estudiante',
-  correoInstitucional: 'luis@universidad.edu',
+  correoInstitucional: 'luis@uninpahu.edu.co',
   tipoActor: 3,
   roles: ['Estudiante']
 };

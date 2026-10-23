@@ -34,5 +34,8 @@ public enum ErrorAutenticacion
     TokenInvalido = 8,
 
     /// <summary>El proveedor de identidad federado no está disponible.</summary>
-    ProveedorIdentidadNoDisponible = 9
+    ProveedorIdentidadNoDisponible = 9,
+
+    /// <summary>La identidad federada no está vinculada a ninguna cuenta de la plataforma.</summary>
+    SinVinculacion = 10
 }

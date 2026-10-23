@@ -1,8 +1,12 @@
+using Backend.Application.Common;
 using Backend.Application.Interfaces;
 using Backend.Infrastructure.Common;
 using Backend.Infrastructure.Identity;
 using Backend.Infrastructure.Persistence;
 using Backend.Infrastructure.Persistence.Identity;
+using Backend.Infrastructure.Persistence.Queries;
+using Backend.Infrastructure.Persistence.Repositories;
+using Backend.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,11 +82,21 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.Seccion));
         services.Configure<EntraIdOptions>(configuration.GetSection(EntraIdOptions.Seccion));
 
+        services.AddSingleton(configuration.GetSection(OpcionesEspacios.Seccion).Get<OpcionesEspacios>() ?? new OpcionesEspacios());
+        services.AddSingleton(configuration.GetSection(OpcionesAlmacen.Seccion).Get<OpcionesAlmacen>() ?? new OpcionesAlmacen());
+        services.AddSingleton(configuration.GetSection(OpcionesIdentidad.Seccion).Get<OpcionesIdentidad>() ?? new OpcionesIdentidad());
+
         services.AddSingleton<IRelojSistema, RelojSistema>();
         services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddSingleton<IQrGenerator, QRCoderService>();
+        services.AddSingleton<IAlmacenArchivos, LocalFileStorageService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IEntraIdProfileResolver, EntraIdProfileResolver>();
         services.AddScoped<IInicializadorIdentity, InicializadorIdentity>();
+        services.AddScoped<IEspaciosRepository, EspaciosRepository>();
+        services.AddScoped<IConsultaEspacios, ConsultaEspacios>();
+        services.AddScoped<IConsultaUsuarios, ConsultaUsuarios>();
+        services.AddScoped<IValidadorTokenEntra, ValidadorTokenEntra>();
 
         return services;
     }

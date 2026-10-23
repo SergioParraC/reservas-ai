@@ -5,7 +5,7 @@ namespace Backend.Application.Interfaces;
 /// <summary>
 /// Puerto de gestión de identidad. La implementación (Infrastructure) es la única que conoce
 /// <c>UserManager&lt;Usuario&gt;</c> y <c>RoleManager&lt;Rol&gt;</c>; la capa de aplicación
-/// solo ve <see cref="CuentaUsuario"/> y <see cref="ResultadoCredenciales"/>.
+/// solo ve los contratos de <see cref="Backend.Application.Autenticacion"/>.
 /// </summary>
 public interface IIdentityService
 {
@@ -18,10 +18,17 @@ public interface IIdentityService
     /// <summary>Localiza una cuenta por su identificador federado (<c>oid</c>) o devuelve <see langword="null"/>.</summary>
     Task<CuentaUsuario?> BuscarPorIdentificadorFederadoAsync(string identificadorFederado, CancellationToken cancellationToken = default);
 
+    /// <summary>Cuenta las cuentas registradas en la plataforma.</summary>
+    Task<int> ContarCuentasAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Cuenta los administradores activos del sistema.</summary>
+    Task<int> ContarAdministradoresActivosAsync(CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Crea un perfil federado con el rol académico indicado. Nunca asigna roles administrativos.
+    /// Crea una cuenta local dentro de una transacción serializable y le asigna el rol
+    /// <c>Administrativo</c> si es la primera cuenta del sistema, o <c>Estudiante</c> en otro caso.
     /// </summary>
-    Task<CuentaUsuario?> CrearPerfilFederadoAsync(AltaPerfilFederado alta, string rol, CancellationToken cancellationToken = default);
+    Task<ResultadoCreacionCuenta> RegistrarCuentaLocalAsync(RegistroCuentaLocal registro, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Verifica las credenciales locales aplicando el control de bloqueo del almacén de identidad.
@@ -35,4 +42,13 @@ public interface IIdentityService
 
     /// <summary>Actualiza la marca de tiempo del último acceso autorizado.</summary>
     Task ActualizarUltimoAccesoAsync(Guid usuarioId, DateTimeOffset momento, CancellationToken cancellationToken = default);
+
+    /// <summary>Reemplaza el rol vigente de la cuenta y sincroniza su tipo de actor.</summary>
+    Task<ResultadoOperacionIdentidad> CambiarRolAsync(Guid usuarioId, string rol, CancellationToken cancellationToken = default);
+
+    /// <summary>Asocia el identificador federado a la cuenta; es idempotente para el mismo valor.</summary>
+    Task<ResultadoOperacionIdentidad> VincularIdentidadAsync(Guid usuarioId, string identificadorFederado, CancellationToken cancellationToken = default);
+
+    /// <summary>Retira el identificador federado de la cuenta sin tocar su contraseña local.</summary>
+    Task<ResultadoOperacionIdentidad> DesvincularIdentidadAsync(Guid usuarioId, CancellationToken cancellationToken = default);
 }

@@ -8,7 +8,7 @@ import { authGuard } from './auth.guard';
 const PERFIL: PerfilUsuario = {
   id: 'usuario-1',
   nombreCompleto: 'Ana Administrativa',
-  correoInstitucional: 'ana@universidad.edu',
+  correoInstitucional: 'ana@uninpahu.edu.co',
   tipoActor: 1,
   roles: ['Administrativo']
 };
@@ -36,6 +36,19 @@ describe('authGuard', () => {
 
   it('permite el acceso con una sesión vigente', () => {
     store.guardar({ token: 'token-1', expiraEn: new Date(Date.now() + 600_000).toISOString(), perfil: PERFIL });
+
+    const resultado = TestBed.runInInjectionContext(() => authGuard(ruta, estado));
+
+    expect(resultado).toBeTrue();
+  });
+
+  it('acepta una sesión federada de Entra ID', () => {
+    store.guardar({
+      token: 'token-entra',
+      expiraEn: new Date(Date.now() + 600_000).toISOString(),
+      origen: 'entra',
+      perfil: PERFIL
+    });
 
     const resultado = TestBed.runInInjectionContext(() => authGuard(ruta, estado));
 

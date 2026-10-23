@@ -17,7 +17,7 @@ namespace Backend.IntegrationTests.Persistencia;
 [Collection(nameof(SqlServerCollection))]
 public sealed class InicializadorIdentityTests
 {
-    private const string CorreoAdministrador = "admin@universidad.edu";
+    private const string CorreoAdministrador = "admin@uninpahu.edu.co";
     private const string ContrasenaAdministrador = "Clave.Segura.2026";
 
     private readonly SqlServerContainerFixture _sql;

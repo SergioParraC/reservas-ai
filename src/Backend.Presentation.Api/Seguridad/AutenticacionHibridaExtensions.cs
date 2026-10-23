@@ -101,17 +101,7 @@ public static class AutenticacionHibridaExtensions
         opciones.Authority = entra.Authority;
         opciones.Audience = entra.AudienciaEfectiva;
         opciones.MapInboundClaims = false;
-        opciones.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = entra.Authority,
-            ValidateAudience = true,
-            ValidAudience = entra.AudienciaEfectiva,
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromSeconds(30),
-            NameClaimType = ClaimTipos.Nombre,
-            RoleClaimType = ClaimTipos.Roles
-        };
+        opciones.TokenValidationParameters = ConfiguracionTokenEntra.Crear(entra, validarEmisor: false);
 
         var eventos = EventosJwtBearer.Crear(EsquemaEntraId);
         eventos.OnTokenValidated = contexto =>

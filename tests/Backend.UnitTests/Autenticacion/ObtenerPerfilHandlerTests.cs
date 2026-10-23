@@ -27,9 +27,10 @@ public sealed class ObtenerPerfilHandlerTests
         perfil.Should().NotBeNull();
         perfil!.Id.Should().Be(cuenta.Id);
         perfil.NombreCompleto.Should().Be("Luis Docente");
-        perfil.CorreoInstitucional.Should().Be("luis@universidad.edu");
+        perfil.CorreoInstitucional.Should().Be("luis@uninpahu.edu.co");
         perfil.TipoActor.Should().Be(TipoActor.Docente);
         perfil.Roles.Should().Equal("Docente");
+        perfil.Vinculado.Should().BeFalse();
     }
 
     [Fact]
@@ -37,7 +38,14 @@ public sealed class ObtenerPerfilHandlerTests
     {
         var propiedades = typeof(PerfilUsuario).GetProperties().Select(propiedad => propiedad.Name).ToArray();
 
-        propiedades.Should().BeEquivalentTo(["Id", "NombreCompleto", "CorreoInstitucional", "TipoActor", "Roles"]);
+        propiedades.Should().BeEquivalentTo([
+            "Id",
+            "NombreCompleto",
+            "CorreoInstitucional",
+            "TipoActor",
+            "Roles",
+            "Vinculado"
+        ]);
         propiedades.Should().NotContain(nombre =>
             nombre.Contains("Password", StringComparison.OrdinalIgnoreCase)
             || nombre.Contains("Hash", StringComparison.OrdinalIgnoreCase)
@@ -71,5 +79,5 @@ public sealed class ObtenerPerfilHandlerTests
     }
 
     private static CuentaUsuario CuentaDocente() =>
-        new(Guid.NewGuid(), "Luis Docente", "luis@universidad.edu", TipoActor.Docente, Activo: true, Bloqueada: false);
+        new(Guid.NewGuid(), "Luis Docente", "luis@uninpahu.edu.co", TipoActor.Docente, Activo: true, Bloqueada: false);
 }

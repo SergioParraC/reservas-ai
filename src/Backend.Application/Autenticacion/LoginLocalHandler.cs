@@ -42,7 +42,13 @@ public sealed class LoginLocalHandler
         }
 
         var roles = await _identidad.ObtenerRolesAsync(cuenta.Id, cancellationToken);
-        var perfil = new PerfilUsuario(cuenta.Id, cuenta.NombreCompleto, cuenta.CorreoInstitucional, cuenta.TipoActor, roles);
+        var perfil = new PerfilUsuario(
+            cuenta.Id,
+            cuenta.NombreCompleto,
+            cuenta.CorreoInstitucional,
+            cuenta.TipoActor,
+            roles,
+            cuenta.IdentificadorFederado is not null);
         var emitidoEn = _reloj.Ahora;
         var token = _tokens.Emitir(perfil, emitidoEn);
 

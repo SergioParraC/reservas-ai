@@ -24,6 +24,21 @@ public static class MensajesIdentidad
     /// <summary>Mensaje cuando un perfil federado no tiene identificador institucional.</summary>
     public const string IdentificadorFederadoRequerido = "El identificador federado es obligatorio para un perfil institucional.";
 
+    /// <summary>Mensaje cuando un token federado no está vinculado a ninguna cuenta.</summary>
+    public const string SinVinculacion = "La cuenta debe registrarse y vincular su identidad institucional desde la configuración del usuario.";
+
+    /// <summary>Mensaje cuando el correo ya está registrado en la plataforma.</summary>
+    public const string CorreoYaRegistrado = "El correo institucional ya está registrado en la plataforma.";
+
+    /// <summary>Mensaje cuando la identidad federada ya está asociada a otra cuenta.</summary>
+    public const string IdentidadYaVinculada = "La identidad institucional ya está vinculada a otra cuenta.";
+
+    /// <summary>Mensaje cuando el correo del token no coincide con el de la cuenta local.</summary>
+    public const string CorreoNoCoincide = "El correo de la cuenta institucional no coincide con el correo registrado.";
+
+    /// <summary>Mensaje cuando la sesión ya es federada.</summary>
+    public const string SesionYaFederada = "La cuenta ya accede con la identidad institucional.";
+
     /// <summary>Mensaje cuando se intenta crear un usuario sin nombre completo.</summary>
     public const string NombreCompletoRequerido = "El nombre completo es obligatorio.";
 

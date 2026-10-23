@@ -34,7 +34,7 @@ public sealed class HybridAuthTests
     public HybridAuthTests(SqlServerContainerFixture sql) => _sql = sql;
 
     [DockerFact]
-    public async Task ElTokenFederadoDeDocenteAprovisionaYReutilizaElPerfil()
+    public async Task ElTokenFederadoVinculadoResuelveElPerfilConElRolLocal()
     {
         var cadena = await _sql.CrearBaseDeDatosAsync("hibrida_docente");
         var capturador = new CapturadorRegistros();
@@ -46,11 +46,13 @@ public sealed class HybridAuthTests
                 constructor.ConfigureTestServices(servicios => servicios.AddSingleton<ILoggerProvider>(capturador));
             },
             ConfiguracionEntra());
-        using var cliente = fabrica.CreateClient();
 
         var oid = Guid.NewGuid().ToString();
+        await CrearCuentaVinculadaAsync(fabrica, oid, RolesAplicacion.Docente, "docente@uninpahu.edu.co");
+
+        using var cliente = fabrica.CreateClient();
         cliente.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", EmitirTokenEntra(oid, "Docente de Pruebas", "docente@universidad.edu", ["Docente"]));
+            new AuthenticationHeaderValue("Bearer", EmitirTokenEntra(oid, "Docente de Pruebas", "docente@uninpahu.edu.co", ["Docente"]));
 
         var primera = await cliente.GetAsync("/api/auth/me");
         Assert.Equal(HttpStatusCode.OK, primera.StatusCode);
@@ -60,7 +62,7 @@ public sealed class HybridAuthTests
 
         var perfil = await segunda.Content.ReadFromJsonAsync<PerfilRespuesta>();
         Assert.NotNull(perfil);
-        Assert.Equal("docente@universidad.edu", perfil.CorreoInstitucional);
+        Assert.Equal("docente@uninpahu.edu.co", perfil.CorreoInstitucional);
         Assert.Contains(RolesAplicacion.Docente, perfil.Roles);
 
         using var alcance = fabrica.Services.CreateScope();
@@ -73,22 +75,46 @@ public sealed class HybridAuthTests
     }
 
     [DockerFact]
-    public async Task ElTokenFederadoSinRolAcademicoDevuelve403()
+    public async Task ElTokenFederadoSinVinculacionDevuelve403YNoAprovisiona()
     {
-        var cadena = await _sql.CrearBaseDeDatosAsync("hibrida_sin_rol");
+        var cadena = await _sql.CrearBaseDeDatosAsync("hibrida_sin_vinculo");
         await using var fabrica = FabricaApiPruebas.Crear(cadena, ConfigurarEntraSimulado, ConfiguracionEntra());
-        using var cliente = fabrica.CreateClient();
 
+        var oid = Guid.NewGuid().ToString();
+        using var cliente = fabrica.CreateClient();
         cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
-            EmitirTokenEntra(Guid.NewGuid().ToString(), "Persona Externa", "externa@universidad.edu", ["Invitado"]));
+            EmitirTokenEntra(oid, "Persona Externa", "externa@uninpahu.edu.co", ["Docente"]));
 
         var respuesta = await cliente.GetAsync("/api/auth/me");
 
         Assert.Equal(HttpStatusCode.Forbidden, respuesta.StatusCode);
         var problema = await respuesta.Content.ReadFromJsonAsync<Problema>();
         Assert.NotNull(problema);
-        Assert.EndsWith("/permisos-insuficientes", problema.Type, StringComparison.Ordinal);
+        Assert.EndsWith("/vinculacion-requerida", problema.Type, StringComparison.Ordinal);
+
+        using var alcance = fabrica.Services.CreateScope();
+        var contexto = alcance.ServiceProvider.GetRequiredService<Backend.Infrastructure.Persistence.ApplicationDbContext>();
+        Assert.Equal(0, await contexto.Users.CountAsync(usuario => usuario.IdentificadorFederado == oid));
+    }
+
+    [DockerFact]
+    public async Task ElRolDelTokenNoElevaElRolAsignadoEnLaPlataforma()
+    {
+        var cadena = await _sql.CrearBaseDeDatosAsync("hibrida_rol_local");
+        await using var fabrica = FabricaApiPruebas.Crear(cadena, ConfigurarEntraSimulado, ConfiguracionEntra());
+
+        var oid = Guid.NewGuid().ToString();
+        await CrearCuentaVinculadaAsync(fabrica, oid, RolesAplicacion.Estudiante, "estudiante@uninpahu.edu.co");
+
+        using var cliente = fabrica.CreateClient();
+        cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            EmitirTokenEntra(oid, "Estudiante de Pruebas", "estudiante@uninpahu.edu.co", ["Administrativo"]));
+
+        var respuesta = await cliente.GetAsync("/api/administracion/verificacion");
+
+        Assert.Equal(HttpStatusCode.Forbidden, respuesta.StatusCode);
     }
 
     [DockerFact]
@@ -103,7 +129,7 @@ public sealed class HybridAuthTests
             EmitirTokenEntra(
                 Guid.NewGuid().ToString(),
                 "Docente Ajeno",
-                "ajeno@universidad.edu",
+                "ajeno@uninpahu.edu.co",
                 ["Docente"],
                 tenantId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
 
@@ -129,7 +155,7 @@ public sealed class HybridAuthTests
 
         cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
-            EmitirTokenEntra(Guid.NewGuid().ToString(), "Docente Caído", "caido@universidad.edu", ["Docente"]));
+            EmitirTokenEntra(Guid.NewGuid().ToString(), "Docente Caído", "caido@uninpahu.edu.co", ["Docente"]));
 
         var federada = await cliente.GetAsync("/api/auth/me");
         var cuerpo = await federada.Content.ReadAsStringAsync();
@@ -145,6 +171,35 @@ public sealed class HybridAuthTests
             new { correoInstitucional = FabricaApiPruebas.CorreoAdmin, contrasena = FabricaApiPruebas.ContrasenaAdmin });
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+    }
+
+    private static async Task CrearCuentaVinculadaAsync(
+        Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> fabrica,
+        string oid,
+        string rol,
+        string correo)
+    {
+        using var alcance = fabrica.Services.CreateScope();
+        var usuarios = alcance.ServiceProvider
+            .GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<Backend.Infrastructure.Persistence.Identity.Usuario>>();
+
+        var tipoActor = string.Equals(rol, RolesAplicacion.Docente, StringComparison.Ordinal)
+            ? Backend.Domain.Enums.TipoActor.Docente
+            : Backend.Domain.Enums.TipoActor.Estudiante;
+
+        var usuario = Backend.Infrastructure.Persistence.Identity.Usuario.Crear(
+            "Cuenta Vinculada",
+            correo,
+            tipoActor,
+            DateTimeOffset.UtcNow);
+
+        usuario.VincularIdentidadFederada(oid);
+
+        var creacion = await usuarios.CreateAsync(usuario, FabricaApiPruebas.ContrasenaAdmin);
+        Assert.True(creacion.Succeeded, string.Join("; ", creacion.Errors.Select(error => error.Description)));
+
+        var asignacion = await usuarios.AddToRoleAsync(usuario, rol);
+        Assert.True(asignacion.Succeeded);
     }
 
     private static Dictionary<string, string?> ConfiguracionEntra() => new()

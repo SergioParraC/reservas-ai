@@ -1,0 +1,66 @@
+<header class="encabezado">
+  <div>
+    <h1>Espacios</h1>
+    <p class="ayuda">Registre áreas, ajuste su aforo y administre sus puestos y códigos QR.</p>
+  </div>
+  <a routerLink="/administracion/espacios/nuevo" class="boton">Nueva área</a>
+</header>
+
+<form [formGroup]="filtros" (ngSubmit)="filtrar()" class="filtros">
+  <label>
+    Buscar
+    <input formControlName="q" placeholder="Nombre o ubicación" />
+  </label>
+  <label>
+    Categoría
+    <select formControlName="categoria">
+      <option value="">Todas</option>
+      @for (categoria of categorias; track categoria.valor) {
+        <option [value]="categoria.valor">{{ categoria.etiqueta }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Estado
+    <select formControlName="estado">
+      <option value="">Todos</option>
+      @for (estado of estados; track estado.valor) {
+        <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+      }
+    </select>
+  </label>
+  <button type="submit">Filtrar</button>
+</form>
+
+@if (tienda.error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+}
+
+@if (tienda.cargando()) {
+  <p role="status">Cargando áreas…</p>
+} @else if (tienda.resultado(); as pagina) {
+  @if (pagina.elementos.length === 0) {
+    <p class="vacio" role="status">No hay áreas registradas con esos filtros.</p>
+  } @else {
+    <div class="rejilla">
+      @for (espacio of pagina.elementos; track espacio.id) {
+        <div class="celda">
+          <app-espacio-card [espacio]="espacio" modo="admin" />
+          <div class="acciones">
+            <a [routerLink]="['/administracion/espacios', espacio.id, 'editar']">Editar</a>
+            <a [routerLink]="['/administracion/espacios', espacio.id, 'puestos']">Puestos</a>
+            <button type="button" class="peligro" (click)="desactivar(espacio.id)">Dar de baja</button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <nav class="paginacion" aria-label="Paginación administrativa">
+      <button type="button" (click)="anterior()" [disabled]="pagina.pagina <= 1">Anterior</button>
+      <span>Página {{ pagina.pagina }} de {{ tienda.totalPaginas() }}</span>
+      <button type="button" (click)="siguiente()" [disabled]="pagina.pagina >= tienda.totalPaginas()">
+        Siguiente
+      </button>
+    </nav>
+  }
+}

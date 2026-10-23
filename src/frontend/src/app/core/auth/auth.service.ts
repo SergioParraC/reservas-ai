@@ -32,6 +32,7 @@ export class AuthService {
           this.sesion.guardar({
             token: emitido.token,
             expiraEn: emitido.expiraEn,
+            origen: 'local',
             perfil: {
               id: '',
               nombreCompleto: '',

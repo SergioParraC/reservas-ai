@@ -52,7 +52,7 @@ public sealed class LoginLocalHandlerTests
     [Fact]
     public async Task ContrasenaIncorrectaDevuelveCredencialesInvalidasSinEmitirToken()
     {
-        var credenciales = new CredencialesLocales("ana@universidad.edu", "clave-erronea");
+        var credenciales = new CredencialesLocales("ana@uninpahu.edu.co", "clave-erronea");
 
         _identidad.Setup(x => x.VerificarCredencialesAsync(credenciales, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResultadoCredenciales.Fallo(EstadoCredenciales.CredencialesInvalidas));
@@ -74,7 +74,7 @@ public sealed class LoginLocalHandlerTests
     [Fact]
     public async Task UsuarioInexistenteDevuelveElMismoErrorGenericoQueUnaContrasenaIncorrecta()
     {
-        var credenciales = new CredencialesLocales("desconocido@universidad.edu", "cualquier-clave");
+        var credenciales = new CredencialesLocales("desconocido@uninpahu.edu.co", "cualquier-clave");
 
         _identidad.Setup(x => x.VerificarCredencialesAsync(credenciales, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResultadoCredenciales.Fallo(EstadoCredenciales.CredencialesInvalidas));
@@ -91,7 +91,7 @@ public sealed class LoginLocalHandlerTests
     [Fact]
     public async Task CuentaInactivaDevuelveCuentaInactivaSinEmitirToken()
     {
-        var credenciales = new CredencialesLocales("inactiva@universidad.edu", "Clave.2026");
+        var credenciales = new CredencialesLocales("inactiva@uninpahu.edu.co", "Clave.2026");
 
         _identidad.Setup(x => x.VerificarCredencialesAsync(credenciales, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResultadoCredenciales.Fallo(EstadoCredenciales.CuentaInactiva));
@@ -108,7 +108,7 @@ public sealed class LoginLocalHandlerTests
     [Fact]
     public async Task CuentaBloqueadaDevuelveCuentaBloqueadaSinEmitirToken()
     {
-        var credenciales = new CredencialesLocales("bloqueada@universidad.edu", "Clave.2026");
+        var credenciales = new CredencialesLocales("bloqueada@uninpahu.edu.co", "Clave.2026");
 
         _identidad.Setup(x => x.VerificarCredencialesAsync(credenciales, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResultadoCredenciales.Fallo(EstadoCredenciales.CuentaBloqueada));
@@ -123,7 +123,7 @@ public sealed class LoginLocalHandlerTests
     }
 
     private static CuentaUsuario CuentaAdministrativa() =>
-        new(Guid.NewGuid(), "Ana Administrativa", "ana@universidad.edu", TipoActor.Administrativo, Activo: true, Bloqueada: false);
+        new(Guid.NewGuid(), "Ana Administrativa", "ana@uninpahu.edu.co", TipoActor.Administrativo, Activo: true, Bloqueada: false);
 
     private LoginLocalHandler CrearHandler() => new(_identidad.Object, _tokens.Object, _reloj.Object);
 }

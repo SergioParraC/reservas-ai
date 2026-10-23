@@ -30,7 +30,7 @@ public sealed class JwtTokenServiceTests
         var perfil = new PerfilUsuario(
             id,
             "Ana Administrativa",
-            "ana@universidad.edu",
+            "ana@uninpahu.edu.co",
             TipoActor.Administrativo,
             ["Administrativo", "Docente"]);
 
@@ -43,7 +43,7 @@ public sealed class JwtTokenServiceTests
             .Should().BeEquivalentTo(ClaimsEsperados);
 
         raiz.GetProperty("sub").GetString().Should().Be(id.ToString());
-        raiz.GetProperty("email").GetString().Should().Be("ana@universidad.edu");
+        raiz.GetProperty("email").GetString().Should().Be("ana@uninpahu.edu.co");
         raiz.GetProperty("name").GetString().Should().Be("Ana Administrativa");
         raiz.GetProperty("iss").GetString().Should().Be(Emisor);
         raiz.GetProperty("aud").GetString().Should().Be(Audiencia);
@@ -69,7 +69,7 @@ public sealed class JwtTokenServiceTests
         opciones.ExpiraMinutos = 15;
 
         var token = new JwtTokenService(Options.Create(opciones))
-            .Emitir(new PerfilUsuario(Guid.NewGuid(), "Luis Docente", "luis@universidad.edu", TipoActor.Docente, ["Docente"]), EmitidoEn);
+            .Emitir(new PerfilUsuario(Guid.NewGuid(), "Luis Docente", "luis@uninpahu.edu.co", TipoActor.Docente, ["Docente"]), EmitidoEn);
 
         using var payload = LeerPayload(token.Token);
 

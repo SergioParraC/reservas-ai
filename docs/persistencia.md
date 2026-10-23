@@ -92,7 +92,7 @@ Las credenciales del administrador **no** se versionan. Se leen de `Seed:AdminEm
 `Seed:AdminPassword` y, opcionalmente, `Seed:AdminNombre`:
 
 ```bash
-dotnet user-secrets set "Seed:AdminEmail" "admin@universidad.edu" --project src/Backend.Presentation.Api
+dotnet user-secrets set "Seed:AdminEmail" "admin@uninpahu.edu.co" --project src/Backend.Presentation.Api
 dotnet user-secrets set "Seed:AdminPassword" "<contraseña-segura>" --project src/Backend.Presentation.Api
 dotnet user-secrets set "Seed:AdminNombre" "Administrador del Sistema" --project src/Backend.Presentation.Api
 ```

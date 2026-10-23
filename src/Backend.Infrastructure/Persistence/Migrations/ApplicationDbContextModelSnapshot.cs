@@ -22,6 +22,111 @@ namespace Backend.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Backend.Domain.Entities.Espacio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ActualizadoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Aforo")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Categoria")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CodigoQR")
+                        .IsRequired()
+                        .HasMaxLength(29)
+                        .HasColumnType("nvarchar(29)");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FotografiaRuta")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("TipoAprobacion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Ubicacion")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodigoQR")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Espacios_CodigoQR");
+
+                    b.HasIndex("Nombre", "Ubicacion")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Espacios_Nombre_Ubicacion");
+
+                    b.HasIndex("Estado", "Categoria", "Aforo")
+                        .HasDatabaseName("IX_Espacios_Estado_Categoria_Aforo");
+
+                    b.ToTable("Espacios", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.Puesto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CodigoQR")
+                        .IsRequired()
+                        .HasMaxLength(29)
+                        .HasColumnType("nvarchar(29)");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DescripcionEquipo")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("EspacioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Identificador")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodigoQR")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Puestos_CodigoQR");
+
+                    b.HasIndex("EspacioId", "Identificador")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Puestos_EspacioId_Identificador");
+
+                    b.ToTable("Puestos", (string)null);
+                });
+
             modelBuilder.Entity("Backend.Infrastructure.Persistence.Identity.Rol", b =>
                 {
                     b.Property<Guid>("Id")
@@ -246,6 +351,15 @@ namespace Backend.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Backend.Domain.Entities.Puesto", b =>
+                {
+                    b.HasOne("Backend.Domain.Entities.Espacio", null)
+                        .WithMany("Puestos")
+                        .HasForeignKey("EspacioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Backend.Infrastructure.Persistence.Identity.Rol", null)
@@ -295,6 +409,11 @@ namespace Backend.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.Espacio", b =>
+                {
+                    b.Navigation("Puestos");
                 });
 #pragma warning restore 612, 618
         }

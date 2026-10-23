@@ -37,15 +37,24 @@ services:
       EntraId__TenantId: "${ENTRA_TENANT_ID:-}"
       EntraId__ClientId: "${ENTRA_CLIENT_ID:-}"
       EntraId__Audience: "${ENTRA_AUDIENCE:-}"
-      Seed__AdminEmail: "${SEED_ADMIN_EMAIL:-admin@universidad.edu}"
+      Seed__AdminEmail: "${SEED_ADMIN_EMAIL:-admin@uninpahu.edu.co}"
       Seed__AdminPassword: "${SEED_ADMIN_PASSWORD:-Clave.Segura.2026}"
       Seed__AdminNombre: "Administrador del Sistema"
       Cors__OrigenesPermitidos__0: "http://localhost:4200"
+      Espacios__AforoMaximo: "500"
+      Espacios__EtiquetasPorHoja: "18"
+      Espacios__TamanoMaximoImagenBytes: "5242880"
+      Almacen__RutaBase: "/var/lib/reservas"
+      Identidad__PermitirAutorregistro: "true"
+      Identidad__DominioCorreoInstitucional: "${DOMINIO_CORREO_INSTITUCIONAL:-uninpahu.edu.co}"
     ports:
       - "8080:8080"
+    volumes:
+      - media:/var/lib/reservas
     depends_on:
       mssql:
         condition: service_healthy
 
 volumes:
   mssql-datos:
+  media:

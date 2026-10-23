@@ -12,4 +12,5 @@ public sealed record CuentaUsuario(
     string CorreoInstitucional,
     TipoActor TipoActor,
     bool Activo,
-    bool Bloqueada);
+    bool Bloqueada,
+    string? IdentificadorFederado = null);

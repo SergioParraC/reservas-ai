@@ -6,7 +6,7 @@ import { SesionStore } from './sesion.store';
 const PERFIL: PerfilUsuario = {
   id: 'usuario-1',
   nombreCompleto: 'Ana Administrativa',
-  correoInstitucional: 'ana@universidad.edu',
+  correoInstitucional: 'ana@uninpahu.edu.co',
   tipoActor: 1,
   roles: ['Administrativo']
 };
@@ -33,7 +33,7 @@ describe('SesionStore', () => {
     store.guardar({ token: 'token-1', expiraEn: new Date(Date.now() + 600_000).toISOString(), perfil: PERFIL });
 
     expect(store.estaAutenticado()).toBeTrue();
-    expect(store.perfil()?.correoInstitucional).toBe('ana@universidad.edu');
+    expect(store.perfil()?.correoInstitucional).toBe('ana@uninpahu.edu.co');
     expect(store.roles()).toEqual(['Administrativo']);
     expect(store.token()).toBe('token-1');
     expect(store.tieneRol('Administrativo')).toBeTrue();
@@ -65,5 +65,20 @@ describe('SesionStore', () => {
 
     expect(recargado.estaAutenticado()).toBeTrue();
     expect(recargado.token()).toBe('token-1');
+  });
+
+  it('distingue el origen local del federado y normaliza el valor por omisión', () => {
+    store.guardar({ token: 'token-local', expiraEn: new Date(Date.now() + 600_000).toISOString(), perfil: PERFIL });
+    expect(store.origen()).toBe('local');
+
+    store.guardar({
+      token: 'token-entra',
+      expiraEn: new Date(Date.now() + 600_000).toISOString(),
+      origen: 'entra',
+      perfil: PERFIL
+    });
+
+    expect(store.origen()).toBe('entra');
+    expect(store.token()).toBe('token-entra');
   });
 });

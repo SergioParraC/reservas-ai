@@ -1,9 +1,13 @@
+using System.Data;
 using Backend.Application.Autenticacion;
 using Backend.Application.Common;
 using Backend.Application.Interfaces;
+using Backend.Domain.Enums;
 using Backend.Domain.Exceptions;
+using Backend.Infrastructure.Persistence;
 using Backend.Infrastructure.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Identity;
@@ -27,12 +31,14 @@ public sealed class IdentityService : IIdentityService
         new PasswordHasher<Usuario>().HashPassword(UsuarioSenuelo, "Clave.Senuelo.2026");
 
     private readonly UserManager<Usuario> _usuarios;
+    private readonly ApplicationDbContext _contexto;
     private readonly IRelojSistema _reloj;
 
-    /// <summary>Inicializa el adaptador con el almacén de usuarios y el reloj del sistema.</summary>
-    public IdentityService(UserManager<Usuario> usuarios, IRelojSistema reloj)
+    /// <summary>Inicializa el adaptador con el almacén de usuarios, la unidad de trabajo y el reloj.</summary>
+    public IdentityService(UserManager<Usuario> usuarios, ApplicationDbContext contexto, IRelojSistema reloj)
     {
         _usuarios = usuarios ?? throw new ArgumentNullException(nameof(usuarios));
+        _contexto = contexto ?? throw new ArgumentNullException(nameof(contexto));
         _reloj = reloj ?? throw new ArgumentNullException(nameof(reloj));
     }
 
@@ -72,43 +78,207 @@ public sealed class IdentityService : IIdentityService
     }
 
     /// <inheritdoc />
-    public async Task<CuentaUsuario?> CrearPerfilFederadoAsync(AltaPerfilFederado alta, string rol, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(alta);
+    public Task<int> ContarCuentasAsync(CancellationToken cancellationToken = default) =>
+        _contexto.Users.CountAsync(cancellationToken);
 
-        if (!RolesAplicacion.EsRolAcademico(rol))
+    /// <inheritdoc />
+    public Task<int> ContarAdministradoresActivosAsync(CancellationToken cancellationToken = default) =>
+        (from usuario in _contexto.Users
+         join asignacion in _contexto.UserRoles on usuario.Id equals asignacion.UserId
+         join rol in _contexto.Roles on asignacion.RoleId equals rol.Id
+         where rol.Name == RolesAplicacion.Administrativo && usuario.Activo
+         select usuario.Id).CountAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<ResultadoCreacionCuenta> RegistrarCuentaLocalAsync(
+        RegistroCuentaLocal registro,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(registro);
+
+        var estrategia = _contexto.Database.CreateExecutionStrategy();
+
+        return await estrategia.ExecuteAsync(async () =>
         {
-            throw new DomainException($"El rol '{rol}' no es un rol académico y no puede asignarse a un perfil federado.");
+            // La estrategia de reintento exige que la transacción sea la unidad reintentable.
+            _contexto.ChangeTracker.Clear();
+
+            await using var transaccion = await _contexto.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
+            try
+            {
+                // El conteo y el alta comparten transacción serializable: dos registros concurrentes
+                // sobre un sistema vacío no pueden producir dos administradores iniciales.
+                var totalCuentas = await _contexto.Users.CountAsync(cancellationToken);
+                var rol = totalCuentas == 0 ? RolesAplicacion.Administrativo : RolesAplicacion.Estudiante;
+                var tipoActor = totalCuentas == 0 ? TipoActor.Administrativo : TipoActor.Estudiante;
+
+                var usuario = Usuario.Crear(registro.NombreCompleto, registro.CorreoInstitucional, tipoActor, _reloj.Ahora);
+                var creacion = await _usuarios.CreateAsync(usuario, registro.Contrasena);
+
+                if (!creacion.Succeeded)
+                {
+                    await transaccion.RollbackAsync(cancellationToken);
+
+                    return creacion.Errors.Any(error => error.Code is "DuplicateEmail" or "DuplicateUserName")
+                        ? ResultadoCreacionCuenta.Duplicado()
+                        : ResultadoCreacionCuenta.Fallo(TraducirErrores(creacion));
+                }
+
+                var asignacion = await _usuarios.AddToRoleAsync(usuario, rol);
+
+                if (!asignacion.Succeeded)
+                {
+                    await transaccion.RollbackAsync(cancellationToken);
+                    return ResultadoCreacionCuenta.Fallo(TraducirErrores(asignacion));
+                }
+
+                await transaccion.CommitAsync(cancellationToken);
+
+                return ResultadoCreacionCuenta.Exito(Mapear(usuario), rol);
+            }
+            catch (DbUpdateException)
+            {
+                await transaccion.RollbackAsync(cancellationToken);
+                return ResultadoCreacionCuenta.Duplicado();
+            }
+            catch (SqlException excepcion) when (excepcion.Number is 1205 or 2601 or 2627)
+            {
+                // Interbloqueo o índice único de la carrera de registro: se informa como conflicto.
+                await transaccion.RollbackAsync(cancellationToken);
+                return ResultadoCreacionCuenta.Duplicado();
+            }
+        });
+    }
+
+    /// <inheritdoc />
+    public async Task<ResultadoOperacionIdentidad> CambiarRolAsync(
+        Guid usuarioId,
+        string rol,
+        CancellationToken cancellationToken = default)
+    {
+        if (!EsRolSoportado(rol))
+        {
+            return ResultadoOperacionIdentidad.Fallo([$"El rol '{rol}' no está soportado por la plataforma."]);
         }
 
-        var usuario = Usuario.Crear(alta.NombreCompleto, alta.CorreoInstitucional, alta.TipoActor, _reloj.Ahora);
-        usuario.VincularIdentidadFederada(alta.IdentificadorFederado);
+        var estrategia = _contexto.Database.CreateExecutionStrategy();
 
-        // Cuenta federada: se crea sin contraseña local.
-        var creacion = await _usuarios.CreateAsync(usuario);
-
-        if (!creacion.Succeeded)
+        return await estrategia.ExecuteAsync(async () =>
         {
-            var existente = await BuscarPorIdentificadorFederadoAsync(alta.IdentificadorFederado, cancellationToken);
+            _contexto.ChangeTracker.Clear();
 
-            if (existente is not null)
+            var usuario = await _usuarios.FindByIdAsync(usuarioId.ToString());
+
+            if (usuario is null)
             {
-                return existente;
+                return ResultadoOperacionIdentidad.Fallo(["La cuenta indicada no existe."]);
             }
 
-            var detalle = string.Join("; ", creacion.Errors.Select(error => $"{error.Code}: {error.Description}"));
-            throw new InvalidOperationException($"No se pudo crear el perfil federado '{alta.IdentificadorFederado}': {detalle}");
-        }
+            await using var transaccion = await _contexto.Database.BeginTransactionAsync(cancellationToken);
 
-        var asignacion = await _usuarios.AddToRoleAsync(usuario, rol);
+            try
+            {
+                var rolesActuales = await _usuarios.GetRolesAsync(usuario);
 
-        if (!asignacion.Succeeded)
+                foreach (var actual in rolesActuales.Where(actual => !string.Equals(actual, rol, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var retiro = await _usuarios.RemoveFromRoleAsync(usuario, actual);
+
+                    if (!retiro.Succeeded)
+                    {
+                        await transaccion.RollbackAsync(cancellationToken);
+                        return ResultadoOperacionIdentidad.Fallo(TraducirErrores(retiro));
+                    }
+                }
+
+                if (!rolesActuales.Contains(rol, StringComparer.OrdinalIgnoreCase))
+                {
+                    var asignacion = await _usuarios.AddToRoleAsync(usuario, rol);
+
+                    if (!asignacion.Succeeded)
+                    {
+                        await transaccion.RollbackAsync(cancellationToken);
+                        return ResultadoOperacionIdentidad.Fallo(TraducirErrores(asignacion));
+                    }
+                }
+
+                usuario.SincronizarTipoActor(TipoActorDe(rol));
+                var actualizacion = await _usuarios.UpdateAsync(usuario);
+
+                if (!actualizacion.Succeeded)
+                {
+                    await transaccion.RollbackAsync(cancellationToken);
+                    return ResultadoOperacionIdentidad.Fallo(TraducirErrores(actualizacion));
+                }
+
+                await transaccion.CommitAsync(cancellationToken);
+
+                return ResultadoOperacionIdentidad.Exito();
+            }
+            catch (DbUpdateException)
+            {
+                await transaccion.RollbackAsync(cancellationToken);
+                return ResultadoOperacionIdentidad.Fallo(["No fue posible actualizar el rol de la cuenta."]);
+            }
+        });
+    }
+
+    /// <inheritdoc />
+    public async Task<ResultadoOperacionIdentidad> VincularIdentidadAsync(
+        Guid usuarioId,
+        string identificadorFederado,
+        CancellationToken cancellationToken = default)
+    {
+        var usuario = await _usuarios.FindByIdAsync(usuarioId.ToString());
+
+        if (usuario is null)
         {
-            var detalle = string.Join("; ", asignacion.Errors.Select(error => $"{error.Code}: {error.Description}"));
-            throw new InvalidOperationException($"No se pudo asignar el rol '{rol}' al perfil federado '{alta.IdentificadorFederado}': {detalle}");
+            return ResultadoOperacionIdentidad.Fallo(["La cuenta indicada no existe."]);
         }
 
-        return Mapear(usuario);
+        try
+        {
+            usuario.VincularIdentidadFederada(identificadorFederado);
+            var actualizacion = await _usuarios.UpdateAsync(usuario);
+
+            return actualizacion.Succeeded
+                ? ResultadoOperacionIdentidad.Exito()
+                : ResultadoOperacionIdentidad.Fallo(TraducirErrores(actualizacion));
+        }
+        catch (DomainException excepcion)
+        {
+            return ResultadoOperacionIdentidad.Fallo([excepcion.Message]);
+        }
+        catch (DbUpdateException)
+        {
+            return ResultadoOperacionIdentidad.Fallo([MensajesIdentidad.IdentidadYaVinculada]);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ResultadoOperacionIdentidad> DesvincularIdentidadAsync(
+        Guid usuarioId,
+        CancellationToken cancellationToken = default)
+    {
+        var usuario = await _usuarios.FindByIdAsync(usuarioId.ToString());
+
+        if (usuario is null)
+        {
+            return ResultadoOperacionIdentidad.Fallo(["La cuenta indicada no existe."]);
+        }
+
+        if (usuario.IdentificadorFederado is null)
+        {
+            return ResultadoOperacionIdentidad.Exito();
+        }
+
+        usuario.RetirarIdentidadFederada();
+        var actualizacion = await _usuarios.UpdateAsync(usuario);
+
+        return actualizacion.Succeeded
+            ? ResultadoOperacionIdentidad.Exito()
+            : ResultadoOperacionIdentidad.Fallo(TraducirErrores(actualizacion));
     }
 
     /// <inheritdoc />
@@ -190,5 +360,21 @@ public sealed class IdentityService : IIdentityService
             usuario.Email ?? string.Empty,
             usuario.TipoActor,
             usuario.Activo,
-            usuario.LockoutEnd is not null && usuario.LockoutEnd > _reloj.Ahora);
+            usuario.LockoutEnd is not null && usuario.LockoutEnd > _reloj.Ahora,
+            usuario.IdentificadorFederado);
+
+    private static bool EsRolSoportado(string? rol) =>
+        string.Equals(rol, RolesAplicacion.Administrativo, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(rol, RolesAplicacion.Docente, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(rol, RolesAplicacion.Estudiante, StringComparison.OrdinalIgnoreCase);
+
+    private static TipoActor TipoActorDe(string rol) =>
+        string.Equals(rol, RolesAplicacion.Administrativo, StringComparison.OrdinalIgnoreCase)
+            ? TipoActor.Administrativo
+            : string.Equals(rol, RolesAplicacion.Docente, StringComparison.OrdinalIgnoreCase)
+                ? TipoActor.Docente
+                : TipoActor.Estudiante;
+
+    private static IReadOnlyList<string> TraducirErrores(IdentityResult resultado) =>
+        resultado.Errors.Select(error => error.Description).ToArray();
 }

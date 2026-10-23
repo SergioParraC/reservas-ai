@@ -9,8 +9,8 @@ namespace Backend.Application.Interfaces;
 public interface IEntraIdProfileResolver
 {
     /// <summary>
-    /// Resuelve el perfil local por el <c>oid</c> del token, o lo aprovisiona si el rol
-    /// institucional es académico (<c>Docente</c> o <c>Estudiante</c>).
+    /// Resuelve el perfil local por el <c>oid</c> vinculado. No aprovisiona cuentas:
+    /// una identidad sin vínculo debe registrarse y vincularse desde la configuración del usuario.
     /// </summary>
     Task<ResultadoPerfilFederado> ResolverAsync(IdentidadFederada identidad, CancellationToken cancellationToken = default);
 }

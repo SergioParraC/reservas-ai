@@ -11,7 +11,7 @@ import { problemDetailsInterceptor } from './problem-details.interceptor';
 const PERFIL: PerfilUsuario = {
   id: 'usuario-1',
   nombreCompleto: 'Ana Administrativa',
-  correoInstitucional: 'ana@universidad.edu',
+  correoInstitucional: 'ana@uninpahu.edu.co',
   tipoActor: 1,
   roles: ['Administrativo']
 };

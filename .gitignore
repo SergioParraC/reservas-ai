@@ -130,3 +130,6 @@ logs/
 # --- Caché de OpenSpec (metadatos, no especificaciones) ---
 # Los *.log de openspec/ ya quedan cubiertos por la regla global de arriba.
 openspec/.cache/
+
+# --- Almacén local de fotografías (volumen de desarrollo) ---
+media/

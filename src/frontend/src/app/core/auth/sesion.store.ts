@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 
-import { PerfilUsuario, Sesion } from './auth.models';
+import { OrigenSesion, PerfilUsuario, Sesion } from './auth.models';
 
 const CLAVE_ALMACENAMIENTO = 'reservas.sesion';
 
@@ -21,16 +21,21 @@ export class SesionStore {
   /** Roles concedidos al portador. */
   readonly roles = computed<readonly string[]>(() => this.estado()?.perfil.roles ?? []);
 
+  /** Origen de la credencial vigente; por compatibilidad, una sesión antigua es local. */
+  readonly origen = computed<OrigenSesion>(() => this.estado()?.origen ?? 'local');
+
   /** Token vigente o `null` si la sesión expiró o no existe. */
   readonly token = computed<string | null>(() => (this.vigente() ? this.estado()?.token ?? null : null));
 
-  /** Indica si hay una sesión con token vigente. */
+  /** Indica si hay una sesión con token vigente, sea local o federada. */
   readonly estaAutenticado = computed(() => this.vigente());
 
   /** Guarda una sesión completa y la persiste. */
   guardar(sesion: Sesion): void {
-    localStorage.setItem(CLAVE_ALMACENAMIENTO, JSON.stringify(sesion));
-    this.estado.set(sesion);
+    const normalizada: Sesion = { ...sesion, origen: sesion.origen ?? 'local' };
+
+    localStorage.setItem(CLAVE_ALMACENAMIENTO, JSON.stringify(normalizada));
+    this.estado.set(normalizada);
   }
 
   /** Completa o reemplaza el perfil de la sesión actual (por ejemplo tras `/api/auth/me`). */

@@ -12,10 +12,31 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login.page').then((modulo) => modulo.LoginPage)
   },
   {
+    path: 'registro',
+    title: 'Crear cuenta',
+    loadComponent: () => import('./features/auth/registro.page').then((modulo) => modulo.RegistroPage)
+  },
+  {
+    path: 'auth/entra',
+    title: 'Acceso institucional',
+    loadComponent: () =>
+      import('./features/auth/entra-callback.page').then((modulo) => modulo.EntraCallbackPage)
+  },
+  {
+    path: 'catalogo',
+    loadChildren: () => import('./features/areas/areas.routes').then((modulo) => modulo.CATALOGO_ROUTES)
+  },
+  {
     path: 'inicio',
     title: 'Inicio',
     canActivate: [authGuard],
     loadComponent: () => import('./features/inicio/inicio.page').then((modulo) => modulo.InicioPage)
+  },
+  {
+    path: 'perfil',
+    title: 'Mi cuenta',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/perfil/perfil.page').then((modulo) => modulo.PerfilPage)
   },
   {
     path: 'administracion',
@@ -24,6 +45,21 @@ export const routes: Routes = [
     data: { roles: [ROLES.administrativo] },
     loadComponent: () =>
       import('./features/administracion/administracion.page').then((modulo) => modulo.AdministracionPage)
+  },
+  {
+    path: 'administracion/espacios',
+    loadChildren: () =>
+      import('./features/areas/areas.routes').then((modulo) => modulo.ESPACIOS_ADMIN_ROUTES)
+  },
+  {
+    path: 'administracion/usuarios',
+    title: 'Usuarios',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [ROLES.administrativo] },
+    loadComponent: () =>
+      import('./features/administracion/usuarios/usuarios-admin.page').then(
+        (modulo) => modulo.UsuariosAdminPage
+      )
   },
   { path: '**', redirectTo: 'inicio' }
 ];

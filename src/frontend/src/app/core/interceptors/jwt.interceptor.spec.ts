@@ -9,7 +9,7 @@ import { jwtInterceptor } from './jwt.interceptor';
 const PERFIL: PerfilUsuario = {
   id: 'usuario-1',
   nombreCompleto: 'Ana Administrativa',
-  correoInstitucional: 'ana@universidad.edu',
+  correoInstitucional: 'ana@uninpahu.edu.co',
   tipoActor: 1,
   roles: ['Administrativo']
 };
@@ -74,6 +74,21 @@ describe('jwtInterceptor', () => {
 
     const api = TestBed.inject(HttpTestingController).expectOne('/api/auth/me');
     expect(api.request.headers.get('Authorization')).toBe('Bearer token-persistido');
+    api.flush({});
+  });
+
+  it('usa el token de Entra cuando la sesión tiene origen federado', () => {
+    store.guardar({
+      token: 'token-entra',
+      expiraEn: new Date(Date.now() + 600_000).toISOString(),
+      origen: 'entra',
+      perfil: PERFIL
+    });
+
+    http.get('/api/auth/me').subscribe();
+
+    const api = control.expectOne('/api/auth/me');
+    expect(api.request.headers.get('Authorization')).toBe('Bearer token-entra');
     api.flush({});
   });
 });

@@ -28,6 +28,12 @@ public sealed class ObtenerPerfilHandler
 
         var roles = await _identidad.ObtenerRolesAsync(cuenta.Id, cancellationToken);
 
-        return new PerfilUsuario(cuenta.Id, cuenta.NombreCompleto, cuenta.CorreoInstitucional, cuenta.TipoActor, roles);
+        return new PerfilUsuario(
+            cuenta.Id,
+            cuenta.NombreCompleto,
+            cuenta.CorreoInstitucional,
+            cuenta.TipoActor,
+            roles,
+            cuenta.IdentificadorFederado is not null);
     }
 }

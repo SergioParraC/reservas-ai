@@ -23,7 +23,7 @@ namespace Backend.IntegrationTests.Autenticacion;
 public sealed class IdentityServiceTests
 {
     private const string Contrasena = "Clave.Segura.2026";
-    private const string Correo = "ana@universidad.edu";
+    private const string Correo = "ana@uninpahu.edu.co";
 
     private readonly SqlServerContainerFixture _sql;
 
@@ -99,7 +99,7 @@ public sealed class IdentityServiceTests
 
         Assert.False(resultadoDuplicado.Succeeded);
 
-        var debil = Usuario.Crear("Clave Débil", "debil@universidad.edu", TipoActor.Estudiante, DateTimeOffset.UtcNow);
+        var debil = Usuario.Crear("Clave Débil", "debil@uninpahu.edu.co", TipoActor.Estudiante, DateTimeOffset.UtcNow);
         var resultadoDebil = await usuarios.CreateAsync(debil, "clave");
 
         Assert.False(resultadoDebil.Succeeded);

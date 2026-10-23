@@ -105,7 +105,7 @@ public sealed class ProblemDetailsTests
 
         var inexistente = await cliente.PostAsJsonAsync(
             "/api/auth/login",
-            new { correoInstitucional = "nadie@universidad.edu", contrasena = "Clave.Incorrecta.1" });
+            new { correoInstitucional = "nadie@uninpahu.edu.co", contrasena = "Clave.Incorrecta.1" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, existente.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, inexistente.StatusCode);

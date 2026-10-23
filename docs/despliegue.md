@@ -23,6 +23,7 @@ Rellena la columna "Tu valor" y guárdala fuera del repositorio.
 | 12 | `SEED_ADMIN_PASSWORD` | Contraseña del administrador inicial | |
 | 13 | `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_AUDIENCE` | Portal de Entra ID (opcional; dejar vacío si solo hay login local) | |
 | 14 | `BD_NOMBRE` | `ReservasEspaciosDb` (o el nombre que quieras) | |
+| 15 | `DOMINIO_CORREO_INSTITUCIONAL` | Dominio de los correos institucionales, p. ej. `uninpahu.edu.co` (varios separados por comas) | |
 
 Todo lo anterior va a un archivo **`.env.prod`** en el servidor (nunca a Git),
 partiendo de `.env.example`.

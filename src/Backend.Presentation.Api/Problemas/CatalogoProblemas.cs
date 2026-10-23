@@ -36,6 +36,9 @@ public static class CatalogoProblemas
         ErrorAutenticacion.TokenInvalido => Crear(
             StatusCodes.Status401Unauthorized, "token-invalido", "Token inválido",
             "El token presentado no es válido.", contexto),
+        ErrorAutenticacion.SinVinculacion => Crear(
+            StatusCodes.Status403Forbidden, "vinculacion-requerida", "Vinculación requerida",
+            MensajesIdentidad.SinVinculacion, contexto),
         ErrorAutenticacion.PerfilInexistente or ErrorAutenticacion.SinRolHabilitado => Crear(
             StatusCodes.Status403Forbidden, "permisos-insuficientes", "Permisos insuficientes",
             MensajesIdentidad.SinHabilitacionInstitucional, contexto),
@@ -46,6 +49,48 @@ public static class CatalogoProblemas
             StatusCodes.Status500InternalServerError, "error-interno", "Error interno",
             "Ocurrió un error inesperado.", contexto)
     };
+
+    /// <summary>Traduce el fallo de un caso de uso al código HTTP del contrato.</summary>
+    public static ObjectResult DesdeResultado(Resultado resultado, HttpContext contexto)
+    {
+        ArgumentNullException.ThrowIfNull(resultado);
+        ArgumentNullException.ThrowIfNull(contexto);
+
+        return CrearDesdeFallo(resultado.TipoFallo, resultado.Mensaje, resultado.Errores, contexto);
+    }
+
+    /// <summary>Traduce el fallo de un caso de uso con valor al código HTTP del contrato.</summary>
+    public static ObjectResult DesdeResultado<T>(Resultado<T> resultado, HttpContext contexto)
+    {
+        ArgumentNullException.ThrowIfNull(resultado);
+        ArgumentNullException.ThrowIfNull(contexto);
+
+        return CrearDesdeFallo(resultado.TipoFallo, resultado.Mensaje, resultado.Errores, contexto);
+    }
+
+    private static ObjectResult CrearDesdeFallo(
+        TipoFallo tipoFallo,
+        string? mensaje,
+        IReadOnlyDictionary<string, string[]> errores,
+        HttpContext contexto)
+    {
+        var (estado, slug, titulo) = tipoFallo switch
+        {
+            TipoFallo.Validacion => (StatusCodes.Status400BadRequest, "solicitud-invalida", "Solicitud inválida"),
+            TipoFallo.Conflicto => (StatusCodes.Status409Conflict, "conflicto", "Conflicto con el estado actual"),
+            TipoFallo.NoEncontrado => (StatusCodes.Status404NotFound, "recurso-no-encontrado", "Recurso no encontrado"),
+            TipoFallo.NoPermitido => (StatusCodes.Status403Forbidden, "operacion-no-permitida", "Operación no permitida"),
+            TipoFallo.NoAutorizado => (StatusCodes.Status401Unauthorized, "token-invalido", "Token inválido"),
+            _ => (StatusCodes.Status500InternalServerError, "error-interno", "Error interno")
+        };
+
+        var detalle = string.IsNullOrWhiteSpace(mensaje) ? titulo : mensaje;
+        var diccionario = errores.Count == 0
+            ? null
+            : errores.ToDictionary(par => par.Key, par => par.Value, StringComparer.Ordinal);
+
+        return Crear(estado, slug, titulo, detalle, contexto, diccionario);
+    }
 
     /// <summary>Construye el cuerpo del problema con correlación y errores por campo opcionales.</summary>
     public static ProblemDetails Construir(

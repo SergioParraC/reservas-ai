@@ -11,4 +11,5 @@ public sealed record PerfilUsuario(
     string NombreCompleto,
     string CorreoInstitucional,
     TipoActor TipoActor,
-    IReadOnlyCollection<string> Roles);
+    IReadOnlyCollection<string> Roles,
+    bool Vinculado = false);

@@ -72,6 +72,12 @@ public sealed class Usuario : IdentityUser<Guid>
         IdentificadorFederado = identificadorFederado.Trim();
     }
 
+    /// <summary>Retira el vínculo federado sin afectar la contraseña local.</summary>
+    public void RetirarIdentidadFederada() => IdentificadorFederado = null;
+
+    /// <summary>Sincroniza el tipo de actor descriptivo cuando cambia el rol vigente.</summary>
+    public void SincronizarTipoActor(TipoActor tipoActor) => TipoActor = tipoActor;
+
     /// <summary>Registra la marca de tiempo del último acceso autorizado.</summary>
     public void RegistrarAcceso(DateTimeOffset momento) => UltimoAccesoEn = momento;
 

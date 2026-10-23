@@ -24,7 +24,7 @@ Guía reproducible para levantar API, base de datos y SPA desde un clon limpio.
 
    ```bash
    dotnet user-secrets set "Jwt:Key" "<clave-de-32+-caracteres>" --project src/Backend.Presentation.Api
-   dotnet user-secrets set "Seed:AdminEmail" "admin@universidad.edu" --project src/Backend.Presentation.Api
+   dotnet user-secrets set "Seed:AdminEmail" "admin@uninpahu.edu.co" --project src/Backend.Presentation.Api
    dotnet user-secrets set "Seed:AdminPassword" "<contraseña-segura>" --project src/Backend.Presentation.Api
    ```
 
@@ -91,7 +91,7 @@ curl -i http://localhost:5085/health
 # 2. Login local del administrador
 curl -s -X POST http://localhost:5085/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"correoInstitucional":"admin@universidad.edu","contrasena":"<contraseña>"}'
+  -d '{"correoInstitucional":"admin@uninpahu.edu.co","contrasena":"<contraseña>"}'
 # 200 OK · { token, tipoToken: "Bearer", expiraEn, roles: ["Administrativo"] }
 
 # 3. Perfil del portador (usar el token anterior)
