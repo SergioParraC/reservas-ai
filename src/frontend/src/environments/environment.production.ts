@@ -7,9 +7,9 @@ export const environment = {
     ventanaToleranciaMinutos: 15
   },
   entraId: {
-    clientId: '',
-    authority: 'https://login.microsoftonline.com/common',
+    clientId: 'aa840431-5f08-4f6e-887f-afe6346663ed',
+    authority: 'https://login.microsoftonline.com/e512294f-d02c-4380-927d-e8427efc06df',
     redirectUri: '/auth/entra',
-    scopes: ['api://reservas-espacios/access_as_user']
+    scopes: ['api://aa840431-5f08-4f6e-887f-afe6346663ed/access_as_user']
   }
 };
