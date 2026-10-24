@@ -331,7 +331,7 @@ El proyecto adopta **Spec-Driven Development (SDD)** con el soporte de **OpenSpe
 └───────────────────────────┬─────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────┐
-│ 3. Implementación Asistida por IA (Gemini CLI)          │
+│ 3. Implementación Asistida por IA (DeepSeek Flash)      │
 │    Generación acotada de código conforme a la spec      │
 └───────────────────────────┬─────────────────────────────┘
                             │
@@ -470,13 +470,13 @@ El desarrollo guiado por especificaciones (**SDD**) garantiza que el desarrollo 
 3. **Validación Formal:** Se ejecuta `openspec validate` para garantizar que la especificación no contenga contradicciones técnicas, vacíos de parámetros ni conflictos con las capas del sistema.
 
 ### Delegación de actividades a la IA y supervisión humana
-El uso de inteligencia artificial se canaliza mediante la interfaz de **Gemini CLI**, estableciendo una clara división de responsabilidades:
+El uso de inteligencia artificial se canaliza mediante la interfaz de **DeepSeek**, empleando el modelo **DeepSeek Flash**, estableciendo una clara división de responsabilidades:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        DIVISIÓN DE RESPONSABILIDADES                   │
 ├───────────────────────────────────┬────────────────────────────────────┤
-│   ASISTENTE IA (Gemini CLI)       │       ESTUDIANTE (Líder Técnico)   │
+│   ASISTENTE IA (DeepSeek Flash)   │       ESTUDIANTE (Líder Técnico)   │
 ├───────────────────────────────────┼────────────────────────────────────┤
 │ • Generación de código estándar   │ • Validación y consenso de specs   │
 │   (Controllers, Mappings, DTOs).  │   mediante `openspec validate`.    │
@@ -489,9 +489,9 @@ El uso de inteligencia artificial se canaliza mediante la interfaz de **Gemini C
 └───────────────────────────────────┴────────────────────────────────────┘
 ```
 
-* **Actividades Delegadas a Gemini CLI:**
+* **Actividades Delegadas a DeepSeek (modelo DeepSeek Flash):**
   1. *Generación de Plantillas y Código de Infraestructura:* Escritura de clases de mapeo de Entity Framework Core, controladores Web API con inyección de dependencias y componentes base de Angular 20 estrictamente ceñidos a la especificación activa.
-  2. *Generación y Asistencia en la Ejecución de Pruebas Unitarias:* Gemini CLI formula la suite de pruebas unitarias (`xUnit`) para cada caso de uso; al terminar la implementación, ejecuta las pruebas mediante comandos de terminal, analiza la salida del compilador o ejecutor de pruebas y emite un diagnóstico evaluando si el código satisface los criterios de la especificación.
+  2. *Generación y Asistencia en la Ejecución de Pruebas Unitarias:* DeepSeek Flash formula la suite de pruebas unitarias (`xUnit`) para cada caso de uso; al terminar la implementación, ejecuta las pruebas mediante comandos de terminal, analiza la salida del compilador o ejecutor de pruebas y emite un diagnóstico evaluando si el código satisface los criterios de la especificación.
   3. *Detección de Malos Olores de Código (*Code Smells*):* Auditoría rápida para identificar violaciones al aislamiento de capas (ej. detectar si una entidad de EF Core está intentando filtrarse en un controlador de presentación).
 * **Actividades Exclusivas del Estudiante (Supervisión Humana):**
   1. *Aprobación de la Especificación:* Ninguna especificación de OpenSpec se da por válida sin la revisión y decisión crítica del estudiante.
@@ -499,7 +499,7 @@ El uso de inteligencia artificial se canaliza mediante la interfaz de **Gemini C
   3. *Gobierno del Repositorio y Versionado:* Autorización y ejecución formal de los commits en Git vinculados al ciclo de trabajo de OpenSpec. El estudiante asume la autoría y defensa técnica de cada componente implementado.
 
 ### Condiciones de aceptación del código generado por IA
-Para que un bloque de código producido por Gemini CLI sea aceptado en el proyecto, debe satisfacer obligatoriamente los siguientes filtros:
+Para que un bloque de código producido por DeepSeek Flash sea aceptado en el proyecto, debe satisfacer obligatoriamente los siguientes filtros:
 1. **Alineación con la Especificación:** El código debe ceñirse con exactitud a los contratos definidos en el archivo `.openspec` correspondiente, sin incorporar métodos accesorios o funcionalidades inventadas fuera de alcance.
 2. **Superación Exitosa de Pruebas:** Las pruebas unitarias redactadas para la funcionalidad deben compilar y pasar con un 100% de éxito en el entorno local.
 3. **Limpieza Técnica:** Ausencia de advertencias (*compiler warnings*), observancia estricta del estándar de nombres en C# / TypeScript y respeto al principio de responsabilidad única (SRP).

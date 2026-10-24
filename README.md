@@ -182,7 +182,7 @@ El backend está concebido como un **Monolito Modular** estructurado en **Clean 
 El proyecto adopta **Spec-Driven Development (SDD)** con el soporte de **OpenSpec**:
 1. **Especificación Formal:** Requisitos, esquemas y criterios de aceptación BDD (*Given/When/Then*) se definen como la única fuente de verdad antes de codificar.
 2. **Validación de Consenso:** Uso del CLI `openspec validate` para garantizar coherencia arquitectónica.
-3. **Implementación Asistida por IA (Gemini CLI):** Generación acotada de código estándar y pruebas unitarias supervisadas por el desarrollador técnico.
+3. **Implementación Asistida por IA (DeepSeek – modelo DeepSeek Flash):** Generación acotada de código estándar y pruebas unitarias supervisadas por el desarrollador técnico.
 4. **Cierre y Definición de Terminado (DoD):** Cobertura de pruebas al 100%, respeto estricto de capas Clean Architecture y commits atómicos.
 
 ---
