@@ -60,11 +60,12 @@ public sealed class ReservasRepository : IReservasRepository
                     return ResultadoGuardadoReserva.Conflicto;
                 }
 
-                // Barrera 2: re-verifica solapamientos con la agenda ya bloqueada.
+                // Barrera 2: re-verifica solapamientos con la agenda ya bloqueada. Tanto una reserva
+                // confirmada como una sesión en uso siguen ocupando su franja.
                 var ocupadas = await _contexto.Reservas
                     .AsNoTracking()
                     .Where(otra => otra.PuestoId == reserva.PuestoId
-                        && otra.Estado == EstadoReserva.Confirmada
+                        && (otra.Estado == EstadoReserva.Confirmada || otra.Estado == EstadoReserva.EnUso)
                         && otra.Fin > reserva.Inicio
                         && otra.Inicio < reserva.Fin)
                     .Select(otra => new { otra.Inicio, otra.Fin })
@@ -80,10 +81,11 @@ public sealed class ReservasRepository : IReservasRepository
                     return ResultadoGuardadoReserva.FranjaOcupada;
                 }
 
-                // Barrera 3: cupo del titular, contado bajo el mismo bloqueo serializable.
+                // Barrera 3: cupo del titular, contado bajo el mismo bloqueo serializable. Quien está
+                // usando un puesto sigue teniendo una reserva activa.
                 var activas = await _contexto.Reservas
                     .FromSqlInterpolated(
-                        $"SELECT * FROM [Reservas] WITH (UPDLOCK, HOLDLOCK) WHERE [UsuarioId] = {reserva.UsuarioId} AND [Estado] = 1")
+                        $"SELECT * FROM [Reservas] WITH (UPDLOCK, HOLDLOCK) WHERE [UsuarioId] = {reserva.UsuarioId} AND [Estado] IN (1, 4)")
                     .AsNoTracking()
                     .CountAsync(cancellationToken);
 
@@ -130,5 +132,22 @@ public sealed class ReservasRepository : IReservasRepository
         {
             return false;
         }
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Reserva>> ListarSinCheckInVencidasAsync(
+        DateTimeOffset ahora,
+        TimeSpan tolerancia,
+        int maximo,
+        CancellationToken cancellationToken = default)
+    {
+        var limite = ahora - tolerancia;
+
+        return await _contexto.Reservas
+            .Where(reserva => reserva.Estado == EstadoReserva.Confirmada && reserva.Inicio <= limite)
+            .OrderBy(reserva => reserva.Inicio)
+            .ThenBy(reserva => reserva.Id)
+            .Take(maximo < 1 ? 1 : maximo)
+            .ToListAsync(cancellationToken);
     }
 }

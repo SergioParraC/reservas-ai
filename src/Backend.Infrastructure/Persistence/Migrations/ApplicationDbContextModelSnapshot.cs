@@ -295,7 +295,16 @@ namespace Backend.Infrastructure.Persistence.Migrations
                     b.Property<int>("Estado")
                         .HasColumnType("int");
 
+                    b.Property<DateTimeOffset?>("FechaCheckIn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("FechaCheckOut")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<DateTimeOffset>("Fin")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("FinPlanificado")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset>("Inicio")
@@ -315,10 +324,13 @@ namespace Backend.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Estado", "Inicio")
+                        .HasDatabaseName("IX_Reservas_Estado_Inicio");
+
                     b.HasIndex("PuestoId", "Inicio")
                         .IsUnique()
                         .HasDatabaseName("IX_Reservas_PuestoId_Inicio_Activa")
-                        .HasFilter("[Estado] = 1");
+                        .HasFilter("[Estado] IN (1, 4)");
 
                     b.HasIndex("UsuarioId", "Inicio")
                         .HasDatabaseName("IX_Reservas_UsuarioId_Inicio");

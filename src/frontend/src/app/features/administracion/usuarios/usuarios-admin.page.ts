@@ -103,6 +103,13 @@ export class UsuariosAdminPage {
     }
   }
 
+  /** Indica si el rol actual no está entre los asignables y debe mostrarse igualmente. */
+  rolNoAsignable(usuario: UsuarioAdministrativo): boolean {
+    const rol = usuario.rol;
+
+    return rol !== null && !(ROLES_ASIGNABLES as readonly string[]).includes(rol);
+  }
+
   /** Registra la selección de un rol y pide confirmación explícita. */
   solicitarCambio(usuario: UsuarioAdministrativo, rol: string): void {
     if (rol === usuario.rol) {

@@ -18,6 +18,7 @@ import { SesionStore } from '../../core/auth/sesion.store';
         @if (autenticado()) {
           <a routerLink="/inicio">Inicio</a>
           <a routerLink="/mis-reservas">Mis reservas</a>
+          <a routerLink="/checkin">Escanear QR</a>
           @if (esDocente()) {
             <a routerLink="/reservas-semestrales/mis-series">Mis series</a>
           }
@@ -25,6 +26,7 @@ import { SesionStore } from '../../core/auth/sesion.store';
             <a routerLink="/bandeja-aprobaciones">Bandeja</a>
           }
           @if (esAdministrativo()) {
+            <a routerLink="/administracion/monitoreo">Monitoreo</a>
             <a routerLink="/administracion/configuracion">Calendario</a>
             <a routerLink="/administracion/espacios">Espacios</a>
             <a routerLink="/administracion/usuarios">Usuarios</a>

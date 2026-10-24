@@ -86,6 +86,25 @@ describe('UsuariosAdminPage', () => {
 
     expect(api.listar).toHaveBeenCalledWith(jasmine.objectContaining({ pagina: 1, tamano: 10 }));
     expect(fixture.nativeElement.textContent).toContain('Luis Estudiante');
+
+    const select = fixture.nativeElement.querySelector('tbody select') as HTMLSelectElement;
+
+    expect(select.value).toBe('Estudiante');
+    expect(select.options[select.selectedIndex].text).toBe('Estudiante');
+  });
+
+  it('muestra "Sin rol" cuando la cuenta no tiene rol asignado', () => {
+    guardarSesion(['Administrativo']);
+    api.listar.and.returnValue(
+      of({ elementos: [{ ...ESTUDIANTE, rol: null }], total: 1, pagina: 1, tamano: 10 })
+    );
+
+    const fixture = TestBed.createComponent(UsuariosAdminPage);
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('tbody select') as HTMLSelectElement;
+
+    expect(select.options[select.selectedIndex].text).toBe('Sin rol');
   });
 
   it('muestra el 409 del último administrador o de la autoedición', () => {

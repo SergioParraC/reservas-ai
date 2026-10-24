@@ -1,0 +1,12 @@
+# Acceso temporal a SQL Server desde tu equipo.
+# Publica el 1433 SOLO en la interfaz local del servidor (127.0.0.1), nunca en la red.
+# Uso:
+#   1) en el servidor:  docker compose --env-file .env.prod -f docker-compose.prod.yml \
+#        -f docker-compose.acceso-bd.yml up -d mssql
+#   2) en tu equipo:    ssh -N -L 1433:127.0.0.1:1433 sergio-parra@192.168.1.10
+#   3) conéctate a:     localhost,1433  (usuario sa, contraseña de MSSQL_SA_PASSWORD)
+# Para cerrar el acceso: volver a levantar sin este archivo.
+services:
+  mssql:
+    ports:
+      - "127.0.0.1:1433:1433"

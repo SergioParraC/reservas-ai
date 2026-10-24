@@ -3,7 +3,9 @@ using Backend.Application.Common;
 using Backend.Application.Interfaces;
 using Backend.Application.Modules.Aprobaciones;
 using Backend.Application.Modules.Areas;
+using Backend.Application.Modules.Asistencia;
 using Backend.Application.Modules.Calendario;
+using Backend.Application.Modules.Monitoreo;
 using Backend.Application.Modules.Reservas;
 using Backend.Application.Modules.Solicitudes;
 using Backend.Application.Modules.Usuarios;
@@ -47,9 +49,14 @@ builder.Services.AddScoped<ConsultarCatalogoHandler>();
 builder.Services.AddScoped<ObtenerEspacioPublicoHandler>();
 
 builder.Services.AddScoped<ConsultarDisponibilidadHandler>();
+builder.Services.AddScoped<ConsultarDisponibilidadEspacioHandler>();
 builder.Services.AddScoped<CrearReservaHandler>();
 builder.Services.AddScoped<ConsultarMisReservasHandler>();
 builder.Services.AddScoped<CancelarReservaHandler>();
+builder.Services.AddScoped<RegistrarCheckInHandler>();
+builder.Services.AddScoped<RegistrarCheckOutHandler>();
+builder.Services.AddScoped<LiberarReservasVencidasHandler>();
+builder.Services.AddScoped<ConsultarOcupacionHandler>();
 
 builder.Services.AddScoped<RegistrarUsuarioHandler>();
 builder.Services.AddScoped<VincularEntraHandler>();
@@ -80,6 +87,14 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
+// Paso explícito de despliegue: `docker compose run --rm --no-deps api --migrar`.
+// Aplica el esquema y siembra el administrador, sin levantar el servidor HTTP.
+if (args.Contains("--migrar", StringComparer.OrdinalIgnoreCase))
+{
+    await app.Services.AplicarMigracionesAsync();
+    return;
+}
+
 // Fotografías del catálogo: archivo en volumen y URL pública estable bajo /media.
 var rutaAlmacen = builder.Configuration.GetValue<string>($"{OpcionesAlmacen.Seccion}:RutaBase")
     ?? new OpcionesAlmacen().RutaBase;
@@ -93,6 +108,11 @@ if (app.Environment.IsDevelopment())
 
     // En otros entornos las migraciones son un paso explícito de despliegue.
     await app.Services.AplicarMigracionesAsync();
+}
+else
+{
+    // La siembra del administrador inicial es idempotente y también corre en producción.
+    await app.Services.SembrarIdentidadAsync();
 }
 
 // Redirección HTTPS: solo cuando el entorno la exige; en contenedor el tráfico llega por HTTP al proxy.

@@ -1,0 +1,5 @@
+# Los scripts y configuraciones que se ejecutan en Linux deben usar LF.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.yml       text eol=lf
+Caddyfile   text eol=lf

@@ -62,17 +62,17 @@ public sealed class ConsultaReservas : IConsultaReservas
         DateTimeOffset hasta,
         CancellationToken cancellationToken = default)
     {
-        var filas = await _contexto.Reservas
+        var ocupadas = await _contexto.Reservas
             .AsNoTracking()
             .Where(reserva => reserva.PuestoId == puestoId
-                && reserva.Estado == EstadoReserva.Confirmada
+                && (reserva.Estado == EstadoReserva.Confirmada || reserva.Estado == EstadoReserva.EnUso)
                 && reserva.Fin > desde
                 && reserva.Inicio < hasta)
             .OrderBy(reserva => reserva.Inicio)
             .Select(reserva => new { reserva.Inicio, reserva.Fin })
             .ToListAsync(cancellationToken);
 
-        return filas
+        return ocupadas
             .Select(fila => new IntervaloOcupado(fila.Inicio, fila.Fin))
             .ToArray();
     }
@@ -121,9 +121,12 @@ public sealed class ConsultaReservas : IConsultaReservas
                 fila.Espacio.Nombre,
                 fila.Reserva.Inicio,
                 fila.Reserva.Fin,
+                fila.Reserva.FinPlanificado,
                 fila.Reserva.Estado,
                 fila.Reserva.CreadaEn,
                 fila.Reserva.CanceladaEn,
+                fila.Reserva.FechaCheckIn,
+                fila.Reserva.FechaCheckOut,
                 false))
             .ToListAsync(cancellationToken);
 

@@ -12,6 +12,12 @@ public enum EstadoReserva
     /// <summary>El titular liberó la franja dentro del plazo permitido.</summary>
     Cancelada = 2,
 
-    /// <summary>Liberada automáticamente por inasistencia; la produce la Etapa 3.</summary>
-    CanceladaPorNoShow = 3
+    /// <summary>Liberada automáticamente por inasistencia al vencer la ventana de check-in.</summary>
+    NoShow = 3,
+
+    /// <summary>El titular confirmó su presencia con el QR del puesto y ocupa la franja.</summary>
+    EnUso = 4,
+
+    /// <summary>El titular registró su salida; la franja deja de ocuparse en ese instante.</summary>
+    Finalizada = 5
 }

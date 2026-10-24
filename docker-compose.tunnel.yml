@@ -1,0 +1,26 @@
+# Capa adicional para publicar SIN dominio propio y SIN abrir puertos (sirve incluso con CGNAT).
+# Uso: docker compose --env-file .env.prod -f docker-compose.prod.yml \
+#        -f docker-compose.tunnel.yml up -d
+# cloudflared crea una URL https://<aleatorio>.trycloudflare.com que apunta a Caddy:80.
+services:
+  caddy:
+    ports: !reset []
+    environment:
+      # En modo túnel no hay dominio ni correo TLS.
+      DOMINIO: "localhost"
+      CORREO_TLS: ""
+    volumes:
+      - ./deploy/Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
+      - ./dist:/srv:ro
+      - caddy-datos:/data
+      - caddy-config:/config
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: reservas-tunel
+    command: tunnel --no-autoupdate --url http://caddy:80
+    depends_on:
+      - caddy
+    restart: unless-stopped
+    networks:
+      - proxy

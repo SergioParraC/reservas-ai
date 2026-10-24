@@ -39,4 +39,14 @@ public interface IReservasRepository
 
     /// <summary>Confirma un cambio de estado; devuelve <see langword="false"/> ante conflicto.</summary>
     Task<bool> GuardarCambiosAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reservas confirmadas cuya ventana de check-in venció (<c>Inicio + tolerancia &lt;= ahora</c>),
+    /// ordenadas por inicio ascendente y acotadas al tamaño de lote del barrido.
+    /// </summary>
+    Task<IReadOnlyList<Reserva>> ListarSinCheckInVencidasAsync(
+        DateTimeOffset ahora,
+        TimeSpan tolerancia,
+        int maximo,
+        CancellationToken cancellationToken = default);
 }

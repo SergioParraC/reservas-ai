@@ -15,6 +15,10 @@ import { environment } from '../../../environments/environment';
     </p>
 
     <nav class="modulos">
+      <a routerLink="/administracion/monitoreo">
+        <strong>Monitoreo de ocupación</strong>
+        <span>Mapa en vivo por área, sesiones en uso y alertas de No-Show.</span>
+      </a>
       <a routerLink="/administracion/configuracion">
         <strong>Calendario institucional</strong>
         <span>Periodo académico vigente y franjas no operativas.</span>

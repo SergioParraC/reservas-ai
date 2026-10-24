@@ -59,4 +59,22 @@ public static class MensajesReserva
 
     /// <summary>La operación exige una sesión autenticada.</summary>
     public const string SinSesion = "La operación requiere una sesión autenticada.";
+
+    /// <summary>El check-in cae fuera de la ventana de tolerancia configurada.</summary>
+    public const string CheckInFueraDeVentana =
+        "Solo se admite el check-in entre {0:HH:mm} y {1:HH:mm} del inicio de la franja.";
+
+    /// <summary>El código escaneado no pertenece al puesto reservado.</summary>
+    public const string CheckInCodigoInvalido = "El código QR no corresponde al puesto reservado.";
+
+    /// <summary>El estado actual de la reserva no admite la transición solicitada.</summary>
+    public const string TransicionInvalida = "La reserva no admite esta transición desde su estado actual.";
+
+    /// <summary>La transición no pudo persistirse por un conflicto de concurrencia.</summary>
+    public const string TransicionNoPersistida =
+        "No fue posible registrar el cambio de estado de la reserva. Intente nuevamente.";
+
+    /// <summary>El lote de liberación por inasistencia no pudo confirmarse.</summary>
+    public const string LiberacionNoPersistida =
+        "No fue posible persistir la liberación por inasistencia; el lote se reintentará en el siguiente ciclo.";
 }

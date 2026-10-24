@@ -1,6 +1,10 @@
+using Backend.Application.Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Backend.IntegrationTests.Infraestructura;
 
@@ -73,6 +77,10 @@ internal static class FabricaApiPruebas
             ["Calendario:PeriodoActivoRequerido"] = "true",
             ["Semestre:SemanasMaximasPorSerie"] = "20",
             ["Semestre:AntelacionMinimaDias"] = "3",
+            ["Reservas:VentanaToleranciaCheckInMinutos"] = "15",
+            ["CheckIn:MinutosIntervaloBarrido"] = "5",
+            ["CheckIn:MaximoReservasPorBarrido"] = "200",
+            ["CheckIn:Habilitado"] = "false",
             ["Solicitudes:TamanoMaximoPdfBytes"] = "5242880",
             ["Solicitudes:MaxSolicitudesActivasPorUsuario"] = "3",
             ["Solicitudes:LongitudMinimaMotivoRechazo"] = "10",
@@ -94,6 +102,30 @@ internal static class FabricaApiPruebas
             constructor.UseEnvironment(entorno);
             ajustar?.Invoke(constructor);
         });
+    }
+
+    /// <summary>
+    /// Crea la fábrica con un reloj controlado por la prueba: la ventana de check-in y el corte del
+    /// barrido se evalúan con el instante que la prueba fije, no con la hora real.
+    /// </summary>
+    /// <param name="cadena">Cadena de conexión a la base de datos de la prueba.</param>
+    /// <param name="reloj">Reloj mutable compartido con la API en memoria.</param>
+    /// <param name="sobrescribir">Valores de configuración adicionales.</param>
+    public static WebApplicationFactory<Program> CrearConReloj(
+        string cadena,
+        RelojPruebas reloj,
+        IDictionary<string, string?>? sobrescribir = null)
+    {
+        ArgumentNullException.ThrowIfNull(reloj);
+
+        return Crear(
+            cadena,
+            constructor => constructor.ConfigureTestServices(servicios =>
+            {
+                servicios.RemoveAll<IRelojSistema>();
+                servicios.AddSingleton<IRelojSistema>(reloj);
+            }),
+            sobrescribir);
     }
 
     private static void PublicarEnEntorno(IDictionary<string, string?> valores)
@@ -142,6 +174,10 @@ internal static class FabricaApiPruebas
         "Reservas__HoraApertura",
         "Reservas__HoraCierre",
         "Reservas__ZonaHoraria",
+        "Reservas__VentanaToleranciaCheckInMinutos",
+        "CheckIn__MinutosIntervaloBarrido",
+        "CheckIn__MaximoReservasPorBarrido",
+        "CheckIn__Habilitado",
         "Solicitudes__TamanoMaximoPdfBytes",
         "Solicitudes__MaxSolicitudesActivasPorUsuario",
         "Solicitudes__LongitudMinimaMotivoRechazo",

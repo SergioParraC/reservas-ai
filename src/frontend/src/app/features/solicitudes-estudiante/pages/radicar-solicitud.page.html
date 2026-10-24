@@ -27,6 +27,64 @@
 
   <form [formGroup]="formulario" (ngSubmit)="radicar()" class="formulario" novalidate>
     <label>
+      Fecha
+      <input type="date" formControlName="fecha" [min]="fechaMinima" />
+    </label>
+
+    <label>
+      Duración
+      <select formControlName="duracionMinutos">
+        @for (duracion of duraciones; track duracion.valor) {
+          <option [value]="duracion.valor">{{ duracion.etiqueta }}</option>
+        }
+      </select>
+    </label>
+
+    @if (areaValida()) {
+      <section class="franjas">
+        <header class="franjas-encabezado">
+          <div>
+            <h2>Horarios disponibles</h2>
+            <p class="ayuda">
+              {{ area()?.nombre }} · {{ fechaConsultada() | date: 'EEEE dd/MM/yyyy' }} · Elija una
+              franja libre: las atenuadas ya están apartadas.
+            </p>
+          </div>
+          <button type="button" class="secundario" (click)="actualizar()" [disabled]="tienda.cargandoEspacio()">
+            Actualizar
+          </button>
+        </header>
+
+        @if (tienda.errorEspacio(); as mensaje) {
+          <p class="error" role="alert">{{ mensaje }}</p>
+        }
+
+        @if (tienda.cargandoEspacio()) {
+          <p role="status">Consultando disponibilidad…</p>
+        } @else if (tienda.disponibilidadEspacio(); as disponibilidad) {
+          @if (area()?.nombre && area()?.nombre !== disponibilidad.espacioNombre) {
+            <p class="error" role="alert">
+              La disponibilidad consultada corresponde a {{ disponibilidad.espacioNombre }}, no al área
+              solicitada ({{ area()?.nombre }}).
+            </p>
+          }
+
+          <app-franja-lista
+            [franjas]="disponibilidad.franjas"
+            [seleccionada]="franja()"
+            (seleccionar)="seleccionarFranja($event)"
+          />
+
+          @if (franja(); as elegida) {
+            <p class="franja-elegida">Franja elegida: {{ rangoFranja(elegida) }}</p>
+          } @else {
+            <p class="franja-elegida">Seleccione una franja disponible.</p>
+          }
+        }
+      </section>
+    }
+
+    <label>
       Materia o actividad
       <input formControlName="materia" maxlength="120" />
       @if (materiaInvalida()) {
@@ -50,24 +108,6 @@
       }
     </label>
 
-    <label>
-      Fecha
-      <input type="date" formControlName="fecha" />
-    </label>
-
-    <label>
-      Hora de inicio
-      <input type="time" formControlName="horaInicio" />
-    </label>
-
-    <label>
-      Hora de fin
-      <input type="time" formControlName="horaFin" />
-      @if (horasInvalidas()) {
-        <span class="validacion">La hora de fin debe ser posterior a la de inicio.</span>
-      }
-    </label>
-
     <label class="ancho">
       Pre-informe (PDF, máximo 5 MB)
       <input type="file" accept="application/pdf" (change)="seleccionarArchivo($event)" />
@@ -80,7 +120,7 @@
     </label>
 
     <div class="acciones">
-      <button type="submit" [disabled]="enviando()">
+      <button type="submit" [disabled]="!franja() || enviando()">
         {{ enviando() ? 'Radicando…' : 'Radicar solicitud' }}
       </button>
       <a routerLink="/catalogo">Cancelar</a>

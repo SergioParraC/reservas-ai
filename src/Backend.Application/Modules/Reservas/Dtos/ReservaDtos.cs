@@ -43,6 +43,13 @@ public sealed record DisponibilidadPuesto(
     string ZonaHoraria,
     IReadOnlyList<FranjaDisponible> Franjas);
 
+/// <summary>Disponibilidad de un área completa para una fecha y jornada determinadas.</summary>
+public sealed record DisponibilidadEspacio(
+    Guid EspacioId,
+    string EspacioNombre,
+    string ZonaHoraria,
+    IReadOnlyList<FranjaDisponible> Franjas);
+
 /// <summary>Detalle de una reserva confirmada o cancelada.</summary>
 public sealed record ReservaDetalle(
     Guid Id,
@@ -52,9 +59,12 @@ public sealed record ReservaDetalle(
     string EspacioNombre,
     DateTimeOffset Inicio,
     DateTimeOffset Fin,
+    DateTimeOffset FinPlanificado,
     EstadoReserva Estado,
     DateTimeOffset CreadaEn,
     DateTimeOffset? CanceladaEn,
+    DateTimeOffset? FechaCheckIn,
+    DateTimeOffset? FechaCheckOut,
     string RowVersion);
 
 /// <summary>Resumen de una reserva del titular para el listado paginado.</summary>
@@ -65,9 +75,12 @@ public sealed record ReservaResumen(
     string EspacioNombre,
     DateTimeOffset Inicio,
     DateTimeOffset Fin,
+    DateTimeOffset FinPlanificado,
     EstadoReserva Estado,
     DateTimeOffset CreadaEn,
     DateTimeOffset? CanceladaEn,
+    DateTimeOffset? FechaCheckIn,
+    DateTimeOffset? FechaCheckOut,
     bool Cancelable);
 
 /// <summary>Datos de entrada para reservar una franja de un puesto.</summary>

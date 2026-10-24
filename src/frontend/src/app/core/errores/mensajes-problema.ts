@@ -23,7 +23,12 @@ export const MENSAJES_PROBLEMA: Record<string, string> = {
   'archivo-no-valido': 'El archivo adjunto no es un PDF válido.',
   'archivo-demasiado-grande': 'El archivo adjunto supera el tamaño máximo de 5 MB.',
   'limite-reservas-alcanzado': 'Alcanzó el máximo de reservas activas.',
-  'fuera-de-plazo': 'La reserva ya no puede cancelarse: falta menos del plazo mínimo.'
+  'fuera-de-plazo': 'La reserva ya no puede cancelarse: falta menos del plazo mínimo.',
+  'check-in-fuera-de-ventana':
+    'El check-in está fuera de la ventana permitida. Escanee dentro del margen configurado.',
+  'check-in-codigo-invalido':
+    'El código escaneado no corresponde al puesto reservado. Verifique la placa e intente de nuevo.',
+  'reserva-ajena': 'La reserva pertenece a otro titular.'
 };
 
 /** Slug estable del problema (`colision-serie`, `archivo-no-valido`, …). */

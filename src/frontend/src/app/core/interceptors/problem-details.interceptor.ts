@@ -18,14 +18,19 @@ export interface ProblemaRfc7807 {
 
 const MENSAJE_GENERICO = 'Ocurrió un error inesperado. Intente nuevamente.';
 
-/** Mensajes descriptivos de los conflictos del préstamo directo. */
+/** Mensajes descriptivos de los conflictos del préstamo directo y de la asistencia. */
 const MENSAJES_RESERVA: Record<string, string> = {
   'franja-no-disponible':
     'La franja seleccionada ya está ocupada. Actualice la disponibilidad e intente de nuevo.',
   'limite-reservas-alcanzado':
     'Alcanzó el máximo de reservas activas. Cancele una reserva para continuar.',
   'fuera-de-plazo': 'La reserva ya no puede cancelarse: falta menos del plazo mínimo.',
-  'puesto-no-reservable': 'El puesto no admite préstamo directo autoconfirmado.'
+  'puesto-no-reservable': 'El puesto no admite préstamo directo autoconfirmado.',
+  'check-in-fuera-de-ventana':
+    'El escaneo está fuera de la ventana de check-in. Repita la lectura dentro del margen indicado.',
+  'check-in-codigo-invalido':
+    'El código escaneado no corresponde al puesto reservado. Verifique la placa e intente de nuevo.',
+  'reserva-ajena': 'La reserva pertenece a otro titular: solo el titular puede registrar la asistencia.'
 };
 
 /**

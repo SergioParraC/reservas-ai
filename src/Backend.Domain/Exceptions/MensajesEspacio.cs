@@ -63,6 +63,9 @@ public static class MensajesEspacio
     /// <summary>El área solicitada no existe.</summary>
     public const string EspacioNoEncontrado = "El área solicitada no existe.";
 
+    /// <summary>El área no se presta como área completa.</summary>
+    public const string AreaNoReservable = "El área no admite reserva de área completa.";
+
     /// <summary>La modalidad de préstamo recibida no pertenece al enum oficial.</summary>
     public const string ModalidadInvalida = "La modalidad de préstamo del área no es válida.";
 

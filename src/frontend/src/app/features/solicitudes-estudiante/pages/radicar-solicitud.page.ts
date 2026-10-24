@@ -1,6 +1,8 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { merge } from 'rxjs';
 
 import { mensajeDeProblema, slugProblema } from '../../../core/errores/mensajes-problema';
 import {
@@ -12,6 +14,10 @@ import { SolicitudesApi } from '../../../core/solicitudes/solicitudes.api';
 import { CalendarioResumen } from '../../administracion/configuracion/components/calendario-resumen';
 import { EspacioPublico, TipoAprobacion, TipoModalidadPrestamo } from '../../areas/models/espacio.models';
 import { EspaciosApi } from '../../areas/services/espacios.api';
+import { FranjaLista } from '../components/franja-lista';
+import { ReservasStore } from '../estado/reservas.store';
+import { aFechaIso, formatearRango, sumarDias } from '../mappers/reserva.mapper';
+import { DURACIONES, FranjaDisponible } from '../models/reserva.models';
 
 /** Tamaño máximo del pre-informe, espejo de `Solicitudes:TamanoMaximoPdfBytes`. */
 const TAMANO_MAXIMO_PDF = 5 * 1024 * 1024;
@@ -19,7 +25,7 @@ const TAMANO_MAXIMO_PDF = 5 * 1024 * 1024;
 /** Radicación de una solicitud de área completa con su pre-informe PDF. */
 @Component({
   selector: 'app-radicar-solicitud',
-  imports: [ReactiveFormsModule, RouterLink, CalendarioResumen],
+  imports: [ReactiveFormsModule, RouterLink, CalendarioResumen, FranjaLista, DatePipe],
   templateUrl: './radicar-solicitud.page.html',
   styles: `
     .volver {
@@ -123,6 +129,51 @@ const TAMANO_MAXIMO_PDF = 5 * 1024 * 1024;
       color: #047857;
       word-break: break-all;
     }
+
+    .franjas {
+      display: block;
+      grid-column: 1 / -1;
+      margin-top: 0.5rem;
+      padding: 1rem;
+      background: #fff;
+      border: 1px solid var(--color-borde);
+      border-radius: 0.75rem;
+    }
+
+    .franjas h2 {
+      margin: 0 0 0.25rem;
+      font-size: 1rem;
+    }
+
+    .franjas-encabezado {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .franjas .secundario {
+      background: #fff;
+      color: var(--color-primario);
+      border: 1px solid var(--color-primario);
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      font: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .franjas .ayuda {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    .franja-elegida {
+      margin: 0.5rem 0 0;
+      color: #4b5563;
+      font-size: 0.9rem;
+    }
   `
 })
 export class RadicarSolicitudPage implements OnInit {
@@ -131,6 +182,7 @@ export class RadicarSolicitudPage implements OnInit {
   private readonly ruta = inject(ActivatedRoute);
   private readonly formularioReactivo = inject(FormBuilder).nonNullable;
 
+  readonly tienda = inject(ReservasStore);
   readonly espacioId = this.ruta.snapshot.paramMap.get('espacioId') ?? '';
   readonly area = signal<EspacioPublico | null>(null);
   readonly error = signal<string | null>(null);
@@ -138,19 +190,18 @@ export class RadicarSolicitudPage implements OnInit {
   readonly archivo = signal<File | null>(null);
   readonly enviando = signal(false);
   readonly radicada = signal<SolicitudRadicada | null>(null);
+  readonly franja = signal<FranjaDisponible | null>(null);
+  readonly areaValida = signal(false);
+  readonly duraciones = DURACIONES;
+  readonly fechaMinima = aFechaIso();
+  readonly fechaConsultada = signal('');
 
   readonly formulario = this.formularioReactivo.group({
     materia: ['', [Validators.required, Validators.maxLength(120)]],
     docenteResponsable: ['', [Validators.required, Validators.maxLength(150)]],
     justificacion: ['', [Validators.required, Validators.maxLength(1000)]],
-    fecha: ['', [Validators.required]],
-    horaInicio: ['14:00', [Validators.required]],
-    horaFin: ['16:00', [Validators.required]]
-  });
-
-  readonly horasInvalidas = computed(() => {
-    const valores = this.formulario.getRawValue();
-    return Boolean(valores.horaInicio) && Boolean(valores.horaFin) && valores.horaFin <= valores.horaInicio;
+    fecha: [aFechaIso(sumarDias(new Date(), 1)), [Validators.required]],
+    duracionMinutos: [60, [Validators.required]]
   });
 
   /** Carga el área y valida que admita solicitudes de área completa. */
@@ -169,10 +220,40 @@ export class RadicarSolicitudPage implements OnInit {
           area.tipoAprobacion === TipoAprobacion.Automatica
         ) {
           this.error.set('El área no admite solicitudes con pre-informe.');
+          return;
         }
+
+        this.areaValida.set(true);
+        this.consultarFranjas();
       },
       error: () => this.error.set('El área solicitada no existe o no está publicada.')
     });
+
+    merge(
+      this.formulario.controls.fecha.valueChanges,
+      this.formulario.controls.duracionMinutos.valueChanges
+    ).subscribe(() => {
+      this.franja.set(null);
+      this.consultarFranjas();
+    });
+
+    this.fechaConsultada.set(this.formulario.controls.fecha.value);
+  }
+
+  /** Vuelve a consultar la disponibilidad del área con la fecha y duración vigentes. */
+  actualizar(): void {
+    this.franja.set(null);
+    this.consultarFranjas();
+  }
+
+  /** Selecciona la franja horaria que se enviará con la solicitud. */
+  seleccionarFranja(franja: FranjaDisponible): void {
+    this.franja.set(franja);
+  }
+
+  /** Rango legible de la franja elegida. */
+  rangoFranja(franja: FranjaDisponible): string {
+    return formatearRango(franja.inicio, franja.fin);
   }
 
   /** Valida y adjunta el archivo comprobando tipo y tamaño localmente. */
@@ -202,15 +283,21 @@ export class RadicarSolicitudPage implements OnInit {
     this.archivo.set(archivo);
   }
 
-  /** Radica la solicitud con `FormData`. */
+  /** Radica la solicitud con `FormData` sobre la franja seleccionada. */
   radicar(): void {
     this.error.set(null);
 
-    if (this.formulario.invalid || this.horasInvalidas() || !this.archivo()) {
+    const franja = this.franja();
+
+    if (this.formulario.invalid || !this.archivo() || !franja) {
       this.formulario.markAllAsTouched();
 
       if (!this.archivo()) {
         this.errorArchivo.set('El pre-informe es obligatorio.');
+      }
+
+      if (!franja) {
+        this.error.set('Seleccione una franja horaria disponible antes de radicar.');
       }
 
       return;
@@ -219,8 +306,8 @@ export class RadicarSolicitudPage implements OnInit {
     const valores = this.formulario.getRawValue();
     const solicitud: SolicitudRadicacion = {
       espacioId: this.espacioId,
-      inicio: this.instanteIso(valores.fecha, valores.horaInicio),
-      fin: this.instanteIso(valores.fecha, valores.horaFin),
+      inicio: franja.inicio,
+      fin: franja.fin,
       materia: valores.materia,
       docenteResponsable: valores.docenteResponsable,
       justificacion: valores.justificacion,
@@ -264,6 +351,27 @@ export class RadicarSolicitudPage implements OnInit {
     return tamanoLegible(bytes);
   }
 
+  private consultarFranjas(): void {
+    if (!this.espacioId || !this.areaValida()) {
+      return;
+    }
+
+    const valores = this.formulario.getRawValue();
+
+    if (!valores.fecha) {
+      return;
+    }
+
+    this.fechaConsultada.set(valores.fecha);
+
+    this.tienda
+      .cargarDisponibilidadEspacio(this.espacioId, {
+        fecha: valores.fecha,
+        duracionMinutos: valores.duracionMinutos
+      })
+      .subscribe();
+  }
+
   private mensajeDeError(error: unknown): string {
     const slug = slugProblema(error);
 
@@ -276,19 +384,5 @@ export class RadicarSolicitudPage implements OnInit {
     }
 
     return mensajeDeProblema(error);
-  }
-
-  private instanteIso(fecha: string, hora: string): string {
-    const [anio, mes, dia] = fecha.split('-').map((parte) => Number(parte));
-    const [horas, minutos] = hora.split(':').map((parte) => Number(parte));
-    const referencia = new Date(anio, mes - 1, dia, horas, minutos, 0, 0);
-    const desplazamiento = -referencia.getTimezoneOffset();
-    const signo = desplazamiento >= 0 ? '+' : '-';
-    const absoluto = Math.abs(desplazamiento);
-    const offset = `${signo}${String(Math.floor(absoluto / 60)).padStart(2, '0')}:${String(
-      absoluto % 60
-    ).padStart(2, '0')}`;
-
-    return `${fecha}T${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:00${offset}`;
   }
 }

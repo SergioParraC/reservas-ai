@@ -48,6 +48,18 @@ export const routes: Routes = [
       )
   },
   {
+    path: 'checkin',
+    pathMatch: 'full',
+    redirectTo: 'mis-reservas'
+  },
+  {
+    path: 'checkin/:reservaId',
+    title: 'Check-in presencial',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/checkin/pages/escaner.page').then((modulo) => modulo.EscanerPage)
+  },
+  {
     path: 'solicitudes',
     title: 'Solicitudes',
     canActivate: [authGuard],
@@ -63,6 +75,16 @@ export const routes: Routes = [
     data: { roles: [ROLES.administrativo] },
     loadComponent: () =>
       import('./features/administracion/administracion.page').then((modulo) => modulo.AdministracionPage)
+  },
+  {
+    path: 'administracion/monitoreo',
+    title: 'Monitoreo de ocupación',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [ROLES.administrativo] },
+    loadComponent: () =>
+      import('./features/administracion/monitoreo/pages/monitoreo.page').then(
+        (modulo) => modulo.MonitoreoPage
+      )
   },
   {
     path: 'administracion/espacios',

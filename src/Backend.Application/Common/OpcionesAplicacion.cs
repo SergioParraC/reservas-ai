@@ -95,6 +95,12 @@ public sealed class OpcionesReservas
     /// <summary>Margen mínimo, en minutos, para cancelar una reserva.</summary>
     public int AntelacionCancelacionMinutos { get; set; } = 30;
 
+    /// <summary>
+    /// Tolerancia simétrica, en minutos, alrededor del inicio de la franja en la que se admite el
+    /// check-in. Es la única fuente de la ventana: no se persiste ni se replica en el dominio.
+    /// </summary>
+    public int VentanaToleranciaCheckInMinutos { get; set; } = 15;
+
     /// <summary>Cupo de reservas confirmadas simultáneas por cuenta.</summary>
     public int MaxReservasActivasPorUsuario { get; set; } = 2;
 
@@ -121,6 +127,9 @@ public sealed class OpcionesReservas
     /// <summary>Resuelve la zona horaria institucional.</summary>
     public TimeZoneInfo ObtenerZonaHoraria() => TimeZoneInfo.FindSystemTimeZoneById(ZonaHoraria);
 
+    /// <summary>Ventana de tolerancia del check-in como <see cref="TimeSpan"/>.</summary>
+    public TimeSpan ObtenerVentanaTolerancia() => TimeSpan.FromMinutes(VentanaToleranciaCheckInMinutos);
+
     /// <summary>Valida la coherencia de la configuración y falla el arranque si es inválida.</summary>
     public void Validar()
     {
@@ -146,6 +155,12 @@ public sealed class OpcionesReservas
         {
             throw new InvalidOperationException(
                 "Reservas:AntelacionCancelacionMinutos y Reservas:MaxReservasActivasPorUsuario no son válidos.");
+        }
+
+        if (VentanaToleranciaCheckInMinutos is < 1 or > 720)
+        {
+            throw new InvalidOperationException(
+                "Reservas:VentanaToleranciaCheckInMinutos debe estar entre 1 y 720 minutos.");
         }
 
         var politica = ObtenerPolitica();

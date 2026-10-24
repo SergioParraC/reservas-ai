@@ -74,12 +74,18 @@
                 <td>{{ usuario.correoInstitucional }}</td>
                 <td>
                   <select
-                    [value]="usuario.rol ?? ''"
                     (change)="solicitarCambio(usuario, $any($event.target).value)"
                     [attr.aria-label]="'Rol de ' + usuario.correoInstitucional"
+                    title="Rol actual"
                   >
+                    @if (!usuario.rol) {
+                      <option value="" [selected]="true">Sin rol</option>
+                    }
+                    @if (rolNoAsignable(usuario)) {
+                      <option [value]="usuario.rol" [selected]="true">{{ usuario.rol }}</option>
+                    }
                     @for (rol of rolesAsignables; track rol) {
-                      <option [value]="rol">{{ rol }}</option>
+                      <option [value]="rol" [selected]="rol === usuario.rol">{{ rol }}</option>
                     }
                   </select>
                 </td>

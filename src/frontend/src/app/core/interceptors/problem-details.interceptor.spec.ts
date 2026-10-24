@@ -134,4 +134,34 @@ describe('problemDetailsInterceptor', () => {
 
     expect(notificador.mensaje()).toContain('ya no puede cancelarse');
   });
+
+  it('explica el rechazo del check-in fuera de la ventana', () => {
+    http.post('/api/reservas/reserva-1/check-in', {}).subscribe({ error: () => undefined });
+    control.expectOne('/api/reservas/reserva-1/check-in').flush(
+      {
+        type: 'https://api.reservas-espacios.edu/problems/check-in-fuera-de-ventana',
+        title: 'Check-in fuera de ventana',
+        status: 409,
+        detail: 'Solo se admite el check-in entre 09:45 y 10:15.'
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+
+    expect(notificador.mensaje()).toContain('fuera de la ventana de check-in');
+  });
+
+  it('explica el código de puesto que no corresponde', () => {
+    http.post('/api/reservas/reserva-1/check-in', {}).subscribe({ error: () => undefined });
+    control.expectOne('/api/reservas/reserva-1/check-in').flush(
+      {
+        type: 'https://api.reservas-espacios.edu/problems/check-in-codigo-invalido',
+        title: 'Código de check-in inválido',
+        status: 409,
+        detail: 'El código QR no corresponde al puesto reservado.'
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+
+    expect(notificador.mensaje()).toContain('no corresponde al puesto reservado');
+  });
 });

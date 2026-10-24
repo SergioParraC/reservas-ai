@@ -96,13 +96,15 @@ public sealed class ReservaTests
     }
 
     [Fact]
-    public void LiberarPorNoShowMarcaElEstadoReservadoParaLaEtapaTres()
+    public void LiberarPorNoShowMarcaElEstadoYConservaLasMarcasDeLaReserva()
     {
         var reserva = Nueva(Ahora.AddDays(1));
 
         reserva.LiberarPorNoShow(Ahora.AddMinutes(15));
 
-        Assert.Equal(EstadoReserva.CanceladaPorNoShow, reserva.Estado);
+        Assert.Equal(EstadoReserva.NoShow, reserva.Estado);
         Assert.False(reserva.EstaVigente);
+        Assert.Equal(Ahora.AddMinutes(15), reserva.CanceladaEn);
+        Assert.Null(reserva.FechaCheckIn);
     }
 }

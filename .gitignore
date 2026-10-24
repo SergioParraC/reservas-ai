@@ -133,3 +133,14 @@ openspec/.cache/
 
 # --- Almacén local de fotografías (volumen de desarrollo) ---
 media/
+# --- Artefactos del despliegue (generados por deploy/) ---
+dist/
+dist-salida/
+paquete/
+paquete-reservas.tgz
+efbundle
+api.tar
+*.exit
+build-prod.log
+fe-build.log
+bundle.log

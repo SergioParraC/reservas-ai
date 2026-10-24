@@ -26,6 +26,10 @@ ENV ASPNETCORE_URLS=http://+:8080 \
 
 COPY --from=build /app/publicado .
 
+# Almacén de fotografías del catálogo (Almacen:RutaBase). Debe existir y ser
+# escribible por el usuario sin privilegios `app`; en compose se monta un volumen.
+RUN mkdir -p /var/lib/reservas && chown -R app:app /var/lib/reservas
+
 # La imagen oficial ya incluye el usuario sin privilegios `app` (uid/gid 1654).
 USER app
 EXPOSE 8080

@@ -41,9 +41,12 @@ const RESERVA: ReservaDetalle = {
   espacioNombre: 'Sala de Cómputo 1',
   inicio: '2026-11-03T10:00:00-05:00',
   fin: '2026-11-03T11:00:00-05:00',
+  finPlanificado: '2026-11-03T11:00:00-05:00',
   estado: EstadoReserva.Confirmada,
   creadaEn: '2026-11-02T08:00:00-05:00',
   canceladaEn: null,
+  fechaCheckIn: null,
+  fechaCheckOut: null,
   rowVersion: 'AAAA'
 };
 

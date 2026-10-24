@@ -20,9 +20,12 @@ public static class MapeoReservas
             puesto.EspacioNombre,
             reserva.Inicio,
             reserva.Fin,
+            reserva.FinPlanificado,
             reserva.Estado,
             reserva.CreadaEn,
             reserva.CanceladaEn,
+            reserva.FechaCheckIn,
+            reserva.FechaCheckOut,
             Convert.ToBase64String(reserva.RowVersion));
     }
 

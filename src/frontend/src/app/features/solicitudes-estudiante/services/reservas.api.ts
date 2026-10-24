@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import {
+  DisponibilidadEspacio,
   DisponibilidadPuesto,
   EstadoReserva,
   FiltrosDisponibilidad,
@@ -28,6 +29,22 @@ export class ReservasApi {
     }
 
     return this.http.get<DisponibilidadPuesto>(`${this.base}/puestos/${puestoId}/disponibilidad`, { params });
+  }
+
+  /** Franjas del área completa con su disponibilidad para una fecha y duración. */
+  disponibilidadEspacio(
+    espacioId: string,
+    filtros: FiltrosDisponibilidad
+  ): Observable<DisponibilidadEspacio> {
+    let params = new HttpParams().set('fecha', filtros.fecha);
+
+    if (filtros.duracionMinutos) {
+      params = params.set('duracionMinutos', String(filtros.duracionMinutos));
+    }
+
+    return this.http.get<DisponibilidadEspacio>(`${this.base}/espacios/${espacioId}/disponibilidad`, {
+      params
+    });
   }
 
   /** Alta autoconfirmada e inmediata de una reserva. */

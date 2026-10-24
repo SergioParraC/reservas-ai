@@ -81,3 +81,62 @@ export function mensajeDeErrorReserva(error: unknown): string {
 
   return 'No fue posible completar la operación. Intente nuevamente.';
 }
+
+/** Traduce los rechazos del check-in y del check-out a un mensaje accionable. */
+export function mensajeDeErrorCheckIn(error: unknown): string {
+  if (error instanceof HttpErrorResponse) {
+    const problema = leerProblema(error);
+    const tipo = problema?.type ?? '';
+
+    if (tipo.endsWith('/check-in-fuera-de-ventana')) {
+      return (
+        problema?.detail ??
+        'El escaneo está fuera de la ventana permitida. Repita la lectura dentro del margen indicado.'
+      );
+    }
+
+    if (tipo.endsWith('/check-in-codigo-invalido')) {
+      return 'El código escaneado no corresponde al puesto reservado. Verifique la placa e intente de nuevo.';
+    }
+
+    if (tipo.endsWith('/reserva-ajena')) {
+      return 'La reserva pertenece a otro titular: solo el titular puede registrar la asistencia.';
+    }
+
+    if (tipo.endsWith('/transicion-invalida')) {
+      return problema?.detail ?? 'La reserva no admite esta operación en su estado actual.';
+    }
+
+    if (problema?.detail) {
+      return problema.detail;
+    }
+  }
+
+  return 'No fue posible registrar la asistencia. Intente nuevamente.';
+}
+
+/** Ventana admitida en formato `09:45 - 10:15` para mostrarla junto a la franja. */
+export function formatearVentanaCheckIn(desde: Date, hasta: Date): string {
+  return `${FORMATO_HORA.format(desde)} - ${FORMATO_HORA.format(hasta)}`;
+}
+
+/**
+ * Aviso del remanente liberado tras una salida anticipada: compara el fin efectivo con el
+ * planificado y describe los minutos devueltos al motor de disponibilidad.
+ */
+export function avisoRemanenteLiberado(inicio: string, fin: string, finPlanificado: string): string {
+  const minutos = Math.max(
+    0,
+    Math.round((new Date(finPlanificado).getTime() - new Date(fin).getTime()) / 60000)
+  );
+
+  if (minutos === 0) {
+    return 'Salida registrada. La franja ya estaba agotada: no queda remanente por liberar.';
+  }
+
+  return (
+    `Salida registrada a las ${formatearHora(fin)}. Se liberaron ${minutos} minuto(s) de la franja ` +
+    `${formatearRango(inicio, fin)} (planificada hasta las ${formatearHora(finPlanificado)}): ` +
+    'el remanente vuelve a estar disponible.'
+  );
+}

@@ -1,5 +1,6 @@
 using Backend.Application.Common;
 using Backend.Application.Interfaces;
+using Backend.Infrastructure.BackgroundJobs;
 using Backend.Infrastructure.Common;
 using Backend.Infrastructure.Identity;
 using Backend.Infrastructure.Persistence;
@@ -90,6 +91,10 @@ public static class DependencyInjection
         opcionesReservas.Validar();
         services.AddSingleton(opcionesReservas);
 
+        var opcionesCheckIn = configuration.GetSection(OpcionesCheckIn.Seccion).Get<OpcionesCheckIn>() ?? new OpcionesCheckIn();
+        opcionesCheckIn.Validar();
+        services.AddSingleton(opcionesCheckIn);
+
         var opcionesSolicitudes = configuration.GetSection(OpcionesSolicitudes.Seccion).Get<OpcionesSolicitudes>() ?? new OpcionesSolicitudes();
         opcionesSolicitudes.Validar();
         services.AddSingleton(opcionesSolicitudes);
@@ -121,6 +126,8 @@ public static class DependencyInjection
         services.AddScoped<IConsultaEspacios, ConsultaEspacios>();
         services.AddScoped<IReservasRepository, ReservasRepository>();
         services.AddScoped<IConsultaReservas, ConsultaReservas>();
+        services.AddScoped<IConsultaCheckIn, ConsultaCheckIn>();
+        services.AddScoped<IConsultaOcupacionActual, ConsultaOcupacionActual>();
         services.AddScoped<IConsultaUsuarios, ConsultaUsuarios>();
         services.AddScoped<IValidadorTokenEntra, ValidadorTokenEntra>();
         services.AddScoped<IPeriodosAcademicosRepository, PeriodosAcademicosRepository>();
@@ -132,6 +139,7 @@ public static class DependencyInjection
         services.AddScoped<IConsultaSolicitudes, ConsultaSolicitudes>();
         services.AddScoped<IColaCorreos, ColaCorreos>();
         services.AddHostedService<DespachadorCorreos>();
+        services.AddHostedService<NoShowBackgroundService>();
 
         return services;
     }

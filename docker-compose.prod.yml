@@ -44,6 +44,8 @@ services:
       Seed__AdminPassword: "${SEED_ADMIN_PASSWORD:?define SEED_ADMIN_PASSWORD en .env.prod}"
       Seed__AdminNombre: "${SEED_ADMIN_NOMBRE:-Administrador del Sistema}"
       Identidad__DominioCorreoInstitucional: "${DOMINIO_CORREO_INSTITUCIONAL:-uninpahu.edu.co}"
+      # Fotografías del catálogo: volumen persistente, servido bajo /media.
+      Almacen__RutaBase: "/var/lib/reservas"
       Cors__OrigenesPermitidos__0: "https://${DOMINIO}"
       Solicitudes__TamanoMaximoPdfBytes: "${TAMANO_MAXIMO_PDF_BYTES:-5242880}"
       Solicitudes__MaxSolicitudesActivasPorUsuario: "${MAX_SOLICITUDES_ACTIVAS:-3}"
@@ -51,19 +53,21 @@ services:
       Semestre__SemanasMaximasPorSerie: "${SEMANAS_MAXIMAS_POR_SERIE:-20}"
       Semestre__AntelacionMinimaDias: "${ANTELACION_MINIMA_DIAS:-3}"
       Calendario__MinutosCacheCalendario: "1"
-      Smtp__Host: "${SMTP_HOST:?define SMTP_HOST en .env.prod}"
+      Smtp__Host: "${SMTP_HOST:-}"
       Smtp__Puerto: "${SMTP_PUERTO:-587}"
       Smtp__UsarSsl: "${SMTP_USAR_SSL:-false}"
       Smtp__Usuario: "${SMTP_USUARIO:-}"
       Smtp__Contrasena: "${SMTP_CONTRASENA:-}"
-      Smtp__RemitenteCorreo: "${SMTP_REMITENTE_CORREO:?define SMTP_REMITENTE_CORREO en .env.prod}"
+      Smtp__RemitenteCorreo: "${SMTP_REMITENTE_CORREO:-reservas@reservas-espacios.local}"
       Smtp__RemitenteNombre: "${SMTP_REMITENTE_NOMBRE:-Reservas de Espacios}"
-      Smtp__Habilitado: "${SMTP_HABILITADO:-true}"
+      Smtp__Habilitado: "${SMTP_HABILITADO:-false}"
       Smtp__IntervaloDespachoSegundos: "${SMTP_INTERVALO_SEGUNDOS:-30}"
     depends_on:
       mssql:
         condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - medios:/var/lib/reservas
     networks:
       - interna
       - proxy
@@ -91,6 +95,7 @@ services:
 
 volumes:
   mssql-datos:
+  medios:
   caddy-datos:
   caddy-config:
 

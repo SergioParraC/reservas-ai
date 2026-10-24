@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --color-primario: #1d4ed8;
   --color-error: #b91c1c;
   --color-borde: #d4d4d8;
@@ -38,4 +38,23 @@ input {
   border: 1px solid var(--color-borde);
   border-radius: 0.5rem;
   font: inherit;
+}
+
+/* Controles nativos siempre con fondo claro y texto legible, sin depender del tema del sistema. */
+input,
+select,
+textarea {
+  background-color: #fff;
+  color: #1f2937;
+}
+
+select option {
+  background-color: #fff;
+  color: #1f2937;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;
+  opacity: 1;
 }

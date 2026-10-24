@@ -31,6 +31,10 @@ import { formatearRango } from '../mappers/reserva.mapper';
     }
   `,
   styles: `
+    :host {
+      display: block;
+    }
+
     .rejilla {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
@@ -45,17 +49,30 @@ import { formatearRango } from '../mappers/reserva.mapper';
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
-      padding: 0.65rem 0.8rem;
+      padding: 0.7rem 0.85rem;
       border: 1px solid var(--color-borde);
       border-radius: 0.5rem;
       background: #fff;
+      /* El botón global usa texto blanco; aquí el fondo es claro y debe conservar contraste. */
+      color: #1f2937;
       cursor: pointer;
       text-align: left;
       font: inherit;
+      transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
     }
 
     .franja:hover:not(:disabled) {
       border-color: var(--color-primario);
+      background: #eff6ff;
+      box-shadow: 0 2px 8px rgba(29, 78, 216, 0.15);
+    }
+
+    .franja:focus-visible {
+      outline: 2px solid var(--color-primario);
+      outline-offset: 2px;
     }
 
     .franja.seleccionada {
@@ -76,7 +93,7 @@ import { formatearRango } from '../mappers/reserva.mapper';
 
     .estado {
       font-size: 0.8rem;
-      color: #6b7280;
+      color: #047857;
     }
 
     .franja.ocupada .estado {

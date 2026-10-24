@@ -2,7 +2,9 @@
 export enum EstadoReserva {
   Confirmada = 1,
   Cancelada = 2,
-  CanceladaPorNoShow = 3
+  NoShow = 3,
+  EnUso = 4,
+  Finalizada = 5
 }
 
 /** Franja de la jornada con su disponibilidad calculada por el backend. */
@@ -23,7 +25,15 @@ export interface DisponibilidadPuesto {
   franjas: FranjaDisponible[];
 }
 
-/** Detalle de una reserva confirmada o cancelada. */
+/** Disponibilidad de un área completa dentro de una fecha y jornada. */
+export interface DisponibilidadEspacio {
+  espacioId: string;
+  espacioNombre: string;
+  zonaHoraria: string;
+  franjas: FranjaDisponible[];
+}
+
+/** Detalle de una reserva con su franja efectiva, la planificada y las marcas de asistencia. */
 export interface ReservaDetalle {
   id: string;
   puestoId: string;
@@ -32,9 +42,12 @@ export interface ReservaDetalle {
   espacioNombre: string;
   inicio: string;
   fin: string;
+  finPlanificado: string;
   estado: EstadoReserva;
   creadaEn: string;
   canceladaEn: string | null;
+  fechaCheckIn: string | null;
+  fechaCheckOut: string | null;
   rowVersion: string;
 }
 
@@ -46,9 +59,12 @@ export interface ReservaResumen {
   espacioNombre: string;
   inicio: string;
   fin: string;
+  finPlanificado: string;
   estado: EstadoReserva;
   creadaEn: string;
   canceladaEn: string | null;
+  fechaCheckIn: string | null;
+  fechaCheckOut: string | null;
   cancelable: boolean;
 }
 
@@ -85,7 +101,9 @@ export interface FiltrosMisReservas {
 export const ESTADOS_RESERVA: ReadonlyArray<{ valor: EstadoReserva; etiqueta: string }> = [
   { valor: EstadoReserva.Confirmada, etiqueta: 'Confirmada' },
   { valor: EstadoReserva.Cancelada, etiqueta: 'Cancelada' },
-  { valor: EstadoReserva.CanceladaPorNoShow, etiqueta: 'Liberada por inasistencia' }
+  { valor: EstadoReserva.NoShow, etiqueta: 'No-show' },
+  { valor: EstadoReserva.EnUso, etiqueta: 'En uso' },
+  { valor: EstadoReserva.Finalizada, etiqueta: 'Finalizada' }
 ];
 
 export const DURACIONES: ReadonlyArray<{ valor: number; etiqueta: string }> = [
@@ -100,6 +118,21 @@ export function etiquetaEstadoReserva(estado: EstadoReserva): string {
   return ESTADOS_RESERVA.find((item) => item.valor === estado)?.etiqueta ?? 'Desconocido';
 }
 
+/** Indica si la reserva admite el ingreso presencial (solo desde `Confirmada`). */
+export function puedeRegistrarIngreso(estado: EstadoReserva): boolean {
+  return estado === EstadoReserva.Confirmada;
+}
+
+/** Indica si la reserva admite la salida (solo desde `EnUso`, sin ventana horaria). */
+export function puedeRegistrarSalida(estado: EstadoReserva): boolean {
+  return estado === EstadoReserva.EnUso;
+}
+
+/** Indica si la franja sigue bloqueada por la reserva. */
+export function estaVigente(estado: EstadoReserva): boolean {
+  return estado === EstadoReserva.Confirmada || estado === EstadoReserva.EnUso;
+}
+
 /** Etiqueta legible del motivo por el que una franja no está disponible. */
 export function etiquetaMotivo(motivo: string | null): string {
   switch (motivo) {
@@ -109,7 +142,11 @@ export function etiquetaMotivo(motivo: string | null): string {
       return 'Fuera de antelación';
     case 'FueraDeHorizonte':
       return 'Fuera del horizonte';
+    case 'FueraDeOperacion':
+      return 'Fuera de operación';
+    case 'FueraDePeriodoAcademico':
+      return 'Fuera del periodo académico';
     default:
-      return '';
+      return motivo ? 'No disponible' : '';
   }
 }

@@ -1,5 +1,7 @@
 using System.Globalization;
 using Backend.Application.Common;
+using Backend.Application.Modules.Asistencia;
+using Backend.Application.Modules.Asistencia.Dtos;
 using Backend.Application.Modules.Reservas;
 using Backend.Application.Modules.Reservas.Dtos;
 using Backend.Domain.Enums;
@@ -11,8 +13,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.Presentation.Api.Controllers;
 
 /// <summary>
-/// Reservas puntuales de puestos de cómputo: alta autoconfirmada, agenda del titular y
-/// cancelación dentro del margen. Todos los endpoints exigen sesión autenticada.
+/// Reservas puntuales de puestos de cómputo: alta autoconfirmada, agenda del titular,
+/// cancelación dentro del margen, check-in con el QR del puesto y check-out con liberación del
+/// remanente. Todos los endpoints exigen sesión autenticada y solo el titular opera su reserva.
 /// </summary>
 [ApiController]
 [Route("api/reservas")]
@@ -22,16 +25,22 @@ public sealed class ReservasController : ControllerBase
     private readonly CrearReservaHandler _crear;
     private readonly ConsultarMisReservasHandler _misReservas;
     private readonly CancelarReservaHandler _cancelar;
+    private readonly RegistrarCheckInHandler _checkIn;
+    private readonly RegistrarCheckOutHandler _checkOut;
 
-    /// <summary>Inicializa el controlador con los casos de uso de reservas.</summary>
+    /// <summary>Inicializa el controlador con los casos de uso de reservas y de asistencia.</summary>
     public ReservasController(
         CrearReservaHandler crear,
         ConsultarMisReservasHandler misReservas,
-        CancelarReservaHandler cancelar)
+        CancelarReservaHandler cancelar,
+        RegistrarCheckInHandler checkIn,
+        RegistrarCheckOutHandler checkOut)
     {
         _crear = crear ?? throw new ArgumentNullException(nameof(crear));
         _misReservas = misReservas ?? throw new ArgumentNullException(nameof(misReservas));
         _cancelar = cancelar ?? throw new ArgumentNullException(nameof(cancelar));
+        _checkIn = checkIn ?? throw new ArgumentNullException(nameof(checkIn));
+        _checkOut = checkOut ?? throw new ArgumentNullException(nameof(checkOut));
     }
 
     /// <summary>Registra la reserva confirmada de inmediato si la franja está libre.</summary>
@@ -126,6 +135,67 @@ public sealed class ReservasController : ControllerBase
             resultado,
             HttpContext,
             ProblemasSolicitud.SlugConflicto(resultado.Mensaje));
+    }
+
+    /// <summary>
+    /// Confirma la presencia con el QR del puesto dentro de la ventana de tolerancia configurada y
+    /// deja la reserva en <c>EnUso</c>.
+    /// </summary>
+    [HttpPost("{id:guid}/check-in")]
+    [ProducesResponseType(typeof(ReservaDetalle), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CheckIn(
+        Guid id,
+        [FromBody] SolicitudCheckIn solicitud,
+        CancellationToken cancellationToken)
+    {
+        if (solicitud is null || string.IsNullOrWhiteSpace(solicitud.CodigoQr))
+        {
+            return CampoInvalido("codigoQr", "El código QR del puesto es obligatorio.");
+        }
+
+        var resultado = await _checkIn.HandleAsync(
+            new ComandoRegistrarCheckIn(id, solicitud.CodigoQr.Trim()),
+            cancellationToken);
+
+        if (resultado is { Exitoso: true, Valor: { } detalle })
+        {
+            return Ok(detalle);
+        }
+
+        return CatalogoProblemas.DesdeResultado(
+            resultado,
+            HttpContext,
+            ProblemasReserva.SlugAsistencia(resultado.Mensaje));
+    }
+
+    /// <summary>
+    /// Registra la salida desde <c>EnUso</c> en cualquier instante. El fin de la franja se acorta
+    /// al momento de salida y el remanente vuelve a estar disponible para otro usuario.
+    /// </summary>
+    [HttpPost("{id:guid}/check-out")]
+    [ProducesResponseType(typeof(ReservaDetalle), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CheckOut(Guid id, CancellationToken cancellationToken)
+    {
+        var resultado = await _checkOut.HandleAsync(id, cancellationToken);
+
+        if (resultado is { Exitoso: true, Valor: { } detalle })
+        {
+            return Ok(detalle);
+        }
+
+        return CatalogoProblemas.DesdeResultado(
+            resultado,
+            HttpContext,
+            ProblemasReserva.SlugAsistencia(resultado.Mensaje));
     }
 
     private static bool TryParseOpcional(string? texto, out DateTimeOffset? valor)

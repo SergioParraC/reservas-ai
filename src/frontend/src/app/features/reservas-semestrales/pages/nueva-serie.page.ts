@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -189,6 +190,14 @@ export class NuevaSeriePage implements OnInit {
     materia: ['', [Validators.required, Validators.maxLength(120)]]
   });
 
+  /**
+   * Estado del formulario expuesto como señal: la aplicación corre sin Zone.js, así que un
+   * `computed` que lea `formulario.valid` directamente nunca se invalida al escribir la materia.
+   */
+  private readonly estadoFormulario = toSignal(this.formulario.statusChanges, {
+    initialValue: this.formulario.status
+  });
+
   readonly ocurrencias = computed(() => {
     const patron = this.patron();
 
@@ -200,7 +209,7 @@ export class NuevaSeriePage implements OnInit {
   );
 
   readonly puedeEnviar = computed(
-    () => Boolean(this.areaId()) && this.formulario.valid && this.confirmadas() > 0
+    () => Boolean(this.areaId()) && this.estadoFormulario() === 'VALID' && this.confirmadas() > 0
   );
 
   /** Carga el calendario vigente y las áreas con modalidad de área completa. */

@@ -39,7 +39,7 @@ public sealed class ConsultaOcupacionEspacio : IConsultaOcupacionEspacio
                 from reserva in _contexto.Reservas.AsNoTracking()
                 join puesto in _contexto.Puestos.AsNoTracking() on reserva.PuestoId equals puesto.Id
                 where puesto.EspacioId == espacioId
-                    && reserva.Estado == EstadoReserva.Confirmada
+                    && (reserva.Estado == EstadoReserva.Confirmada || reserva.Estado == EstadoReserva.EnUso)
                     && reserva.Fin > desde
                     && reserva.Inicio < hasta
                 select new { reserva.Inicio, reserva.Fin })
@@ -71,7 +71,7 @@ public sealed class ConsultaOcupacionEspacio : IConsultaOcupacionEspacio
                 from reserva in _contexto.Reservas.AsNoTracking()
                 join puesto in _contexto.Puestos.AsNoTracking() on reserva.PuestoId equals puesto.Id
                 where puesto.EspacioId == espacioId
-                    && reserva.Estado == EstadoReserva.Confirmada
+                    && (reserva.Estado == EstadoReserva.Confirmada || reserva.Estado == EstadoReserva.EnUso)
                     && reserva.Fin > desde
                 select reserva.Id)
             .AnyAsync(cancellationToken);

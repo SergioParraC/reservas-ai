@@ -22,6 +22,7 @@ public sealed class Reserva
         UsuarioId = usuarioId;
         Inicio = franja.Inicio;
         Fin = franja.Fin;
+        FinPlanificado = franja.Fin;
         Estado = EstadoReserva.Confirmada;
         CreadaEn = creadaEn;
     }
@@ -38,8 +39,11 @@ public sealed class Reserva
     /// <summary>Inicio de la franja reservada.</summary>
     public DateTimeOffset Inicio { get; private set; }
 
-    /// <summary>Fin de la franja reservada.</summary>
+    /// <summary>Fin de la franja reservada; se acorta al registrar una salida anticipada.</summary>
     public DateTimeOffset Fin { get; private set; }
+
+    /// <summary>Fin pactado en el alta; nunca cambia y sirve de techo al check-out.</summary>
+    public DateTimeOffset FinPlanificado { get; private set; }
 
     /// <summary>Estado transaccional de la reserva.</summary>
     public EstadoReserva Estado { get; private set; }
@@ -47,8 +51,14 @@ public sealed class Reserva
     /// <summary>Momento del alta.</summary>
     public DateTimeOffset CreadaEn { get; private set; }
 
-    /// <summary>Momento de la cancelación, si ocurrió.</summary>
+    /// <summary>Momento de la cancelación o de la liberación por inasistencia, si ocurrió.</summary>
     public DateTimeOffset? CanceladaEn { get; private set; }
+
+    /// <summary>Momento del ingreso confirmado con el QR del puesto, si ocurrió.</summary>
+    public DateTimeOffset? FechaCheckIn { get; private set; }
+
+    /// <summary>Momento de la salida registrada por el titular, si ocurrió.</summary>
+    public DateTimeOffset? FechaCheckOut { get; private set; }
 
     /// <summary>Token de concurrencia optimista gestionado por la base de datos.</summary>
     public byte[] RowVersion { get; private set; } = [];
@@ -57,7 +67,7 @@ public sealed class Reserva
     public FranjaHoraria Franja => FranjaHoraria.Desde(Inicio, Fin);
 
     /// <summary>Indica si la reserva sigue bloqueando su franja.</summary>
-    public bool EstaVigente => Estado == EstadoReserva.Confirmada;
+    public bool EstaVigente => Estado is EstadoReserva.Confirmada or EstadoReserva.EnUso;
 
     /// <summary>Crea una reserva confirmada de inmediato para el titular.</summary>
     public static Reserva Confirmar(
@@ -84,7 +94,57 @@ public sealed class Reserva
     {
         ArgumentNullException.ThrowIfNull(politica);
 
-        return EstaVigente && momento <= Inicio - politica.AntelacionCancelacion;
+        return Estado == EstadoReserva.Confirmada && momento <= Inicio - politica.AntelacionCancelacion;
+    }
+
+    /// <summary>
+    /// Indica si el instante cae dentro de la ventana simétrica de check-in
+    /// <c>[Inicio - tolerancia, Inicio + tolerancia]</c>. La tolerancia llega de configuración.
+    /// </summary>
+    public bool EstaEnVentanaDeCheckIn(DateTimeOffset momento, TimeSpan tolerancia) =>
+        momento >= Inicio - tolerancia && momento <= Inicio + tolerancia;
+
+    /// <summary>
+    /// Confirma la presencia física del titular: solo desde <see cref="EstadoReserva.Confirmada"/> y
+    /// dentro de la ventana de tolerancia; registra la marca real del ingreso.
+    /// </summary>
+    public void RegistrarCheckIn(DateTimeOffset momento, TimeSpan tolerancia)
+    {
+        if (Estado != EstadoReserva.Confirmada)
+        {
+            throw new ConflictoException(MensajesReserva.TransicionInvalida);
+        }
+
+        if (!EstaEnVentanaDeCheckIn(momento, tolerancia))
+        {
+            throw new ConflictoException(string.Format(
+                CultureInfo.InvariantCulture,
+                MensajesReserva.CheckInFueraDeVentana,
+                Inicio - tolerancia,
+                Inicio + tolerancia));
+        }
+
+        Estado = EstadoReserva.EnUso;
+        FechaCheckIn = momento;
+    }
+
+    /// <summary>
+    /// Registra la salida desde <see cref="EstadoReserva.EnUso"/>, sin ventana horaria. Acorta
+    /// <see cref="Fin"/> al momento de salida con piso en <see cref="Inicio"/> y techo en
+    /// <see cref="FinPlanificado"/>: el remanente vuelve a estar disponible de inmediato.
+    /// </summary>
+    public void Finalizar(DateTimeOffset momento)
+    {
+        if (Estado != EstadoReserva.EnUso)
+        {
+            throw new ConflictoException(MensajesReserva.TransicionInvalida);
+        }
+
+        Estado = EstadoReserva.Finalizada;
+        FechaCheckOut = momento;
+
+        var finAcortado = momento < FinPlanificado ? momento : FinPlanificado;
+        Fin = finAcortado < Inicio ? Inicio : finAcortado;
     }
 
     /// <summary>
@@ -95,7 +155,7 @@ public sealed class Reserva
     {
         ArgumentNullException.ThrowIfNull(politica);
 
-        if (!EstaVigente)
+        if (Estado != EstadoReserva.Confirmada)
         {
             throw new ConflictoException(MensajesReserva.EstadoNoCancelable);
         }
@@ -112,15 +172,19 @@ public sealed class Reserva
         CanceladaEn = momento;
     }
 
-    /// <summary>Marca la reserva como liberada por inasistencia; reservado para la Etapa 3.</summary>
+    /// <summary>
+    /// Marca la reserva como liberada por inasistencia. Solo aplica a reservas confirmadas que
+    /// nunca registraron ingreso; una sesión <see cref="EstadoReserva.EnUso"/> se cierra con el
+    /// check-out del titular.
+    /// </summary>
     public void LiberarPorNoShow(DateTimeOffset momento)
     {
-        if (!EstaVigente)
+        if (Estado != EstadoReserva.Confirmada)
         {
-            throw new ConflictoException(MensajesReserva.EstadoNoCancelable);
+            throw new ConflictoException(MensajesReserva.TransicionInvalida);
         }
 
-        Estado = EstadoReserva.CanceladaPorNoShow;
+        Estado = EstadoReserva.NoShow;
         CanceladaEn = momento;
     }
 }

@@ -3,6 +3,7 @@ import { catchError, finalize, map, Observable, of, tap } from 'rxjs';
 
 import { mensajeDeErrorReserva } from '../mappers/reserva.mapper';
 import {
+  DisponibilidadEspacio,
   DisponibilidadPuesto,
   FiltrosDisponibilidad,
   FiltrosMisReservas,
@@ -27,10 +28,13 @@ export class ReservasStore {
   private readonly api = inject(ReservasApi);
 
   readonly disponibilidad = signal<DisponibilidadPuesto | null>(null);
+  readonly disponibilidadEspacio = signal<DisponibilidadEspacio | null>(null);
   readonly reservas = signal<PaginaReservas | null>(null);
   readonly cargando = signal(false);
   readonly cargandoReservas = signal(false);
   readonly cancelando = signal<string | null>(null);
+  readonly cargandoEspacio = signal(false);
+  readonly errorEspacio = signal<string | null>(null);
   readonly error = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
 
@@ -60,6 +64,25 @@ export class ReservasStore {
       }),
       catchError(() => of(null)),
       finalize(() => this.cargando.set(false))
+    );
+  }
+
+  /** Carga las franjas del área completa; ante error deja el mensaje y limpia la disponibilidad. */
+  cargarDisponibilidadEspacio(
+    espacioId: string,
+    filtros: FiltrosDisponibilidad
+  ): Observable<DisponibilidadEspacio | null> {
+    this.cargandoEspacio.set(true);
+    this.errorEspacio.set(null);
+    this.disponibilidadEspacio.set(null);
+
+    return this.api.disponibilidadEspacio(espacioId, filtros).pipe(
+      tap({
+        next: (disponibilidad) => this.disponibilidadEspacio.set(disponibilidad),
+        error: (error: unknown) => this.errorEspacio.set(mensajeDeErrorReserva(error))
+      }),
+      catchError(() => of(null)),
+      finalize(() => this.cargandoEspacio.set(false))
     );
   }
 

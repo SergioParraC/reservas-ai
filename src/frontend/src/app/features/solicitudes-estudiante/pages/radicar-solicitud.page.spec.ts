@@ -12,6 +12,8 @@ import {
 } from '../../areas/models/espacio.models';
 import { EspaciosApi } from '../../areas/services/espacios.api';
 import { CalendarioApi } from '../../administracion/configuracion/services/calendario.api';
+import { DisponibilidadEspacio } from '../models/reserva.models';
+import { ReservasApi } from '../services/reservas.api';
 import { RadicarSolicitudPage } from './radicar-solicitud.page';
 
 const AREA: EspacioPublico = {
@@ -44,13 +46,44 @@ function pdf(): File {
   return new File(['%PDF-1.4 contenido %%EOF'], 'informe.pdf', { type: 'application/pdf' });
 }
 
+const DISPONIBILIDAD: DisponibilidadEspacio = {
+  espacioId: 'espacio-1',
+  espacioNombre: 'Laboratorio de Redes',
+  zonaHoraria: 'America/Bogota',
+  franjas: [
+    {
+      inicio: '2026-11-05T08:00:00-05:00',
+      fin: '2026-11-05T10:00:00-05:00',
+      disponible: true,
+      motivo: null
+    },
+    {
+      inicio: '2026-11-05T10:00:00-05:00',
+      fin: '2026-11-05T12:00:00-05:00',
+      disponible: false,
+      motivo: 'Ocupada'
+    }
+  ]
+};
+
+const FRANJA_LIBRE = DISPONIBILIDAD.franjas[0];
+
 describe('RadicarSolicitudPage', () => {
   let espacios: jasmine.SpyObj<EspaciosApi>;
   let solicitudes: jasmine.SpyObj<SolicitudesApi>;
+  let reservas: jasmine.SpyObj<ReservasApi>;
 
   beforeEach(() => {
     espacios = jasmine.createSpyObj<EspaciosApi>('EspaciosApi', ['obtenerPublico']);
     solicitudes = jasmine.createSpyObj<SolicitudesApi>('SolicitudesApi', ['radicar']);
+    reservas = jasmine.createSpyObj<ReservasApi>('ReservasApi', [
+      'disponibilidad',
+      'disponibilidadEspacio',
+      'crear',
+      'misReservas',
+      'cancelar'
+    ]);
+    reservas.disponibilidadEspacio.and.returnValue(of(DISPONIBILIDAD));
     const calendario = jasmine.createSpyObj<CalendarioApi>('CalendarioApi', [
       'vigente',
       'listarPeriodos',
@@ -70,6 +103,7 @@ describe('RadicarSolicitudPage', () => {
         provideRouter([]),
         { provide: EspaciosApi, useValue: espacios },
         { provide: SolicitudesApi, useValue: solicitudes },
+        { provide: ReservasApi, useValue: reservas },
         { provide: CalendarioApi, useValue: calendario },
         {
           provide: ActivatedRoute,
@@ -91,11 +125,54 @@ describe('RadicarSolicitudPage', () => {
       docenteResponsable: 'Ing. Laura Gómez',
       justificacion: 'Práctica de laboratorio.',
       fecha: '2026-11-05',
-      horaInicio: '14:00',
-      horaFin: '16:00'
+      duracionMinutos: 120
     });
+    componente.seleccionarFranja(FRANJA_LIBRE);
     componente.seleccionarArchivo({ target: { files: [pdf()] } } as unknown as Event);
   }
+
+  it('consulta y muestra las franjas disponibles del área', () => {
+    const componente = pagina();
+
+    expect(reservas.disponibilidadEspacio).toHaveBeenCalledWith(
+      'espacio-1',
+      jasmine.objectContaining({ fecha: jasmine.any(String), duracionMinutos: 60 })
+    );
+    expect(componente.tienda.disponibilidadEspacio()?.franjas.length).toBe(2);
+    expect(componente.areaValida()).toBeTrue();
+  });
+
+  it('muestra como ocupadas las franjas apartadas en la agenda del área', () => {
+    const fixture = TestBed.createComponent(RadicarSolicitudPage);
+    fixture.detectChanges();
+
+    const botones = Array.from(
+      fixture.nativeElement.querySelectorAll('.franja') as NodeListOf<HTMLButtonElement>
+    );
+
+    expect(botones.length).toBe(2);
+    expect(botones[0].textContent).toContain('Disponible');
+    expect(botones[1].disabled).toBeTrue();
+    expect(botones[1].textContent).toContain('Ocupada');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Laboratorio de Redes');
+  });
+
+  it('no radica sin una franja seleccionada', () => {
+    const componente = pagina();
+
+    componente.formulario.setValue({
+      materia: 'Bases de datos',
+      docenteResponsable: 'Ing. Laura Gómez',
+      justificacion: 'Práctica de laboratorio.',
+      fecha: '2026-11-05',
+      duracionMinutos: 120
+    });
+    componente.seleccionarArchivo({ target: { files: [pdf()] } } as unknown as Event);
+    componente.radicar();
+
+    expect(componente.error()).toContain('franja');
+    expect(solicitudes.radicar).not.toHaveBeenCalled();
+  });
 
   it('rechaza localmente un archivo que no es PDF', () => {
     const componente = pagina();
@@ -156,7 +233,12 @@ describe('RadicarSolicitudPage', () => {
     componente.radicar();
 
     expect(solicitudes.radicar).toHaveBeenCalledWith(
-      jasmine.objectContaining({ espacioId: 'espacio-1', materia: 'Bases de datos' })
+      jasmine.objectContaining({
+        espacioId: 'espacio-1',
+        materia: 'Bases de datos',
+        inicio: FRANJA_LIBRE.inicio,
+        fin: FRANJA_LIBRE.fin
+      })
     );
     expect(componente.radicada()?.id).toBe('solicitud-1');
     expect(componente.enviando()).toBeFalse();

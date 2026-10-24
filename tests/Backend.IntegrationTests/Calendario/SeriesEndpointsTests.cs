@@ -218,8 +218,8 @@ public sealed class SeriesEndpointsTests
             await using var comando = conexion.CreateCommand();
             comando.CommandText = """
                 DECLARE @usuario uniqueidentifier = (SELECT TOP 1 [Id] FROM [AspNetUsers]);
-                INSERT INTO [Reservas] ([Id], [PuestoId], [UsuarioId], [Inicio], [Fin], [Estado], [CreadaEn])
-                VALUES (NEWID(), @puestoId, @usuario, @inicio, @fin, 1, SYSDATETIMEOFFSET());
+                INSERT INTO [Reservas] ([Id], [PuestoId], [UsuarioId], [Inicio], [Fin], [FinPlanificado], [Estado], [CreadaEn])
+                VALUES (NEWID(), @puestoId, @usuario, @inicio, @fin, @fin, 1, SYSDATETIMEOFFSET());
                 """;
             comando.Parameters.AddWithValue("@puestoId", puestoId);
             comando.Parameters.AddWithValue("@inicio", inicio);
